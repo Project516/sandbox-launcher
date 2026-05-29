@@ -8,14 +8,11 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class Window extends Application {
+public class LauncherHome extends Application {
 
     @Override
-    public void start(Stage stage) throws Exception {
-
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Label l = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
+    public void start(Stage stage) {
+        Label l = new Label("Welcome");
 
         Button button1 = new Button("Click me");
 

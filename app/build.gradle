@@ -29,7 +29,7 @@ java {
 
 javafx {
     version = "26.0.1"
-    modules = ['javafx.controls']
+    modules = ['javafx.controls', 'javafx.fxml']
 }
 
 application {
@@ -45,30 +45,20 @@ tasks.named('test') {
 compileJava.dependsOn spotlessApply
 spotless {
     java {
-        target fileTree('.') {
-            include '**/*.java'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        toggleOffOn()
-        googleJavaFormat("1.35.0").aosp()
+        importOrder()
         removeUnusedImports()
+        palantirJavaFormat()
+        formatAnnotations()
         trimTrailingWhitespace()
         endWithNewline()
     }
     groovyGradle {
-        target fileTree('.') {
-            include '**/*.gradle'
-            exclude '**/build/**', '**/build-*/**'
-        }
         leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
     }
     format 'misc', {
-        target fileTree('.') {
-            include '**/*.md', '**/.gitignore'
-            exclude '**/build/**', '**/build-*/**'
-        }
+        target  '**/*.md', '**/.gitignore'
         trimTrailingWhitespace()
         leadingTabsToSpaces(2)
         endWithNewline()

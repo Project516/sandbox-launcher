@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- fx:controller tells JavaFX which Java class handles the logic for this view -->
+<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.project516.sandbox.gui.LauncherHomeController">
+    <children>
+        <!-- fx:id allows the Java code to find and change this specific label -->
+        <Label fx:id="statusLabel" text="Welcome to Sandbox Launcher" />
+        
+        <!-- onAction tells JavaFX to run a specific method when clicked -->
+        <Button text="Click me" onAction="#onButtonClick" />
+    </children>
+</VBox>
