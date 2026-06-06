@@ -10,7 +10,7 @@ public class HomeWindow extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         Button launchButton = new Button("Launch");
-        Button quitBotton  = new Button("Quit");
+        Button quitBotton = new Button("Quit");
 
         VBox homeLayout = new VBox(15);
 
@@ -21,13 +21,13 @@ public class HomeWindow extends Application {
 
             new Thread(() -> {
                         System.out.println("Launching...");
-                        //Application.launch(InstanceWindow.class); // need to find how to launch another window
+                        // Application.launch(InstanceWindow.class); // need to find how to launch another window
                     })
                     .start();
         });
 
         quitBotton.setOnAction(e -> {
-           System.out.println("Quitting..."); // need to find how to quit application
+            System.out.println("Quitting..."); // need to find how to quit application
         });
 
         Scene scene = new Scene(homeLayout, 600, 400);
