@@ -4,6 +4,6 @@ import javafx.application.Application;
 
 public class Launcher {
     public static void launch() {
-        Application.launch(GUI.class);
+        Application.launch(HomeWindow.class);
     }
 }

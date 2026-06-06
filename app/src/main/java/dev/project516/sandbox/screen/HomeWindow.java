@@ -6,7 +6,7 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class GUI extends Application {
+public class HomeWindow extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         Button launchButton = new Button("Launch");
