@@ -16,10 +16,8 @@ public class InstanceWindow extends Application {
 
         Button launchButton = new Button("Launch");
 
-        VBox launchLayout = new  VBox(10);
+        VBox launchLayout = new VBox(10);
 
         launchLayout.getChildren().addAll(logField, launchButton);
-
-
     }
 }
