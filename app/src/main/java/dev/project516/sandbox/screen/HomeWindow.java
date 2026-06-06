@@ -18,7 +18,11 @@ public class HomeWindow extends Application {
         launchButton.setOnAction(e -> {
             launchButton.setDisable(true);
 
-            new Thread(() -> System.out.println("Launching...")).start();
+            new Thread(() -> {
+                        System.out.println("Launching...");
+                        //Application.launch(InstanceWindow.class); // need to find how to launch another window
+                    })
+                    .start();
         });
 
         Scene scene = new Scene(homeLayout, 600, 400);
