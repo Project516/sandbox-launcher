@@ -10,7 +10,7 @@ public class HomeWindow extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         Button launchButton = new Button("Launch");
-        Button quitBotton = new Button("Quit");
+        Button quitBotton = new Button("Quit"); // maybe not needed
 
         VBox homeLayout = new VBox(15);
 

@@ -11,7 +11,7 @@ public class InstanceWindow extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         TextField logField = new TextField();
-        logField.setPromptText("Log Messages");
+        logField.setPromptText("Log Messages"); // for logging output
         logField.setDisable(true);
 
         Button launchButton = new Button("Launch");

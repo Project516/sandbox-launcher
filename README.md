@@ -6,3 +6,4 @@ maybe add microsoft auth??? that would be hard, id want to do it myself or use o
 
 mojang has json of minecraft versions, i can use a json library like jackson to parse it and add a version selector thingy
 
+Java 25 is used
