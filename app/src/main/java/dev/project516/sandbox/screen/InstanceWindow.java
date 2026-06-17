@@ -1,23 +1,26 @@
 package dev.project516.sandbox.screen;
 
-import javafx.application.Application;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class InstanceWindow extends Application {
+public class InstanceWindow {
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        TextField logField = new TextField();
-        logField.setPromptText("Log Messages"); // for logging output
-        logField.setDisable(true);
+    public void show() {
+        Stage stage = new Stage();
+        stage.setTitle("Minecraft Instance");
+        stage.setWidth(400);
+        stage.setHeight(300);
 
-        Button launchButton = new Button("Launch");
+        Label titleLabel = new Label("Instance Window Opened!");
 
-        VBox launchLayout = new VBox(10);
+        VBox root = new VBox(10, titleLabel);
 
-        launchLayout.getChildren().addAll(logField, launchButton);
+        Scene scene = new Scene(root);
+
+        stage.setScene(scene);
+
+        stage.show();
     }
 }
