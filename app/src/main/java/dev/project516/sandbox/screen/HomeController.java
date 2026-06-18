@@ -1,9 +1,13 @@
 package dev.project516.sandbox.screen;
 
+import dev.project516.sandbox.core.InstanceManager;
+import dev.project516.sandbox.model.Instance;
+import java.util.List;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 
@@ -16,32 +20,69 @@ public class HomeController {
     private Button quitButton;
 
     @FXML
-    private ListView<String> instanceListView;
+    private ListView<Instance> instanceListView;
+
+    @FXML
+    private Button addTestButton;
+
+    @FXML
+    private Button deleteTestButton;
 
     @FXML
     private void initialize() {
-        ObservableList<String> dummyInstances =
-                FXCollections.observableArrayList("Vanilla 1.20.4", "All The Mods 10", "Beta 1.7.3");
-
-        instanceListView.setItems(dummyInstances);
+        List<Instance> loadedInstances = InstanceManager.loadInstances();
+        ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
+        instanceListView.setItems(observableInstances);
     }
 
     @FXML
     private void onLaunchClick() {
         System.out.println("Launch clicked");
 
-        String selected = instanceListView.getSelectionModel().getSelectedItem();
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            System.out.println("Please select an instance!"); // TODO: print warning in app
+            // System.out.println("Please select an instance!"); // TODO: print warning in app
+
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an Instance");
+            alert.showAndWait();
+            return;
+        } else {
+            System.out.println("Launching: : " + selected.name());
         }
 
-        InstanceWindow instanceWindow = new InstanceWindow();
-        instanceWindow.show();
+        // InstanceWindow instanceWindow = new InstanceWindow();
+        // instanceWindow.show();
     }
 
     @FXML
     private void onQuitClick() {
         System.out.println("Quit clicked");
         Platform.exit();
+    }
+
+    @FXML
+    private void onAddTestClick() {
+        Instance newInstance = new Instance("Test", "1.20.4");
+        instanceListView.getItems().add(newInstance);
+        InstanceManager.saveInstances(instanceListView.getItems());
+    }
+
+    @FXML
+    private void onDeleteTestClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance!");
+            alert.showAndWait();
+            return;
+        }
+        instanceListView.getItems().remove(selected);
+        InstanceManager.saveInstances(instanceListView.getItems());
     }
 }
