@@ -1,6 +1,7 @@
 package dev.project516.sandbox.screen;
 
 import dev.project516.sandbox.core.InstanceManager;
+import dev.project516.sandbox.core.MojangManager;
 import dev.project516.sandbox.model.Instance;
 import java.util.List;
 import javafx.application.Platform;
@@ -33,6 +34,14 @@ public class HomeController {
         List<Instance> loadedInstances = InstanceManager.loadInstances();
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
         instanceListView.setItems(observableInstances);
+
+        MojangManager.fetchVersionManifest().thenAccept(manifest -> {
+            if (manifest != null) {
+                Platform.runLater(() -> {
+                    versionComboBox.getItems().setAll(manifest.versions());
+                });
+            }
+        });
     }
 
     @FXML
