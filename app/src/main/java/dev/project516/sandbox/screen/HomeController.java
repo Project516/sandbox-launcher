@@ -3,6 +3,7 @@ package dev.project516.sandbox.screen;
 import dev.project516.sandbox.core.InstanceManager;
 import dev.project516.sandbox.core.MojangManager;
 import dev.project516.sandbox.model.Instance;
+import dev.project516.sandbox.model.mojang.Version;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -10,6 +11,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 
 public class HomeController {
@@ -35,13 +37,19 @@ public class HomeController {
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
         instanceListView.setItems(observableInstances);
 
-        MojangManager.fetchVersionManifest().thenAccept(manifest -> {
-            if (manifest != null) {
-                Platform.runLater(() -> {
-                    versionComboBox.getItems().setAll(manifest.versions());
+        MojangManager.fetchVersionManifest()
+                .thenAccept(manifest -> {
+                    if (manifest != null) {
+                        Platform.runLater(() -> {
+                            versionComboBox.getItems().setAll(manifest.versions());
+                        });
+                    }
+                })
+                .exceptionally(e -> {
+                    System.err.println("Failed to fetch versions!");
+                    e.printStackTrace();
+                    return null;
                 });
-            }
-        });
     }
 
     @FXML
@@ -73,14 +81,25 @@ public class HomeController {
     }
 
     @FXML
-    private void onAddTestClick() {
-        Instance newInstance = new Instance("Test", "1.20.4");
+    private void onAddClick() {
+        Version selectedVersion = versionComboBox.getSelectionModel().getSelectedItem();
+        if (selectedVersion == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Version Selected!");
+            alert.setContentText("Please select a Version");
+            alert.showAndWait();
+            return;
+        }
+
+        Instance newInstance = new Instance("New Instance", selectedVersion.id());
+
         instanceListView.getItems().add(newInstance);
         InstanceManager.saveInstances(instanceListView.getItems());
     }
 
     @FXML
-    private void onDeleteTestClick() {
+    private void onDeleteClick() {
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
@@ -94,4 +113,7 @@ public class HomeController {
         instanceListView.getItems().remove(selected);
         InstanceManager.saveInstances(instanceListView.getItems());
     }
+
+    @FXML
+    private ComboBox<Version> versionComboBox;
 }

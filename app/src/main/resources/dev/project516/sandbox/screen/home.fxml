@@ -6,6 +6,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ComboBox?>
 
 <VBox alignment="TOP_CENTER" prefHeight="600.0" prefWidth="800.0" spacing="15.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.project516.sandbox.screen.HomeController">
     <children>
@@ -23,8 +24,9 @@
          <children>
               <Button fx:id="launchButton" onAction="#onLaunchClick" prefHeight="30.0" prefWidth="195.0" text="Launch" />
               <Button fx:id="quitButton" onAction="#onQuitClick" prefHeight="26.0" prefWidth="116.0" text="Quit" GridPane.columnIndex="2" />
-            <Button fx:id="addTestButton" mnemonicParsing="false" onAction="#onAddTestClick" prefHeight="26.0" prefWidth="217.0" text="Add Test" GridPane.columnIndex="1" />
-            <Button fx:id="deleteTestButton" mnemonicParsing="false" onAction="#onDeleteTestClick" prefHeight="26.0" prefWidth="216.0" text="Delete Test" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Button fx:id="addTestButton" mnemonicParsing="false" onAction="#onAddClick" prefHeight="26.0" prefWidth="217.0" text="Add Instance" GridPane.columnIndex="1" />
+            <Button fx:id="deleteTestButton" mnemonicParsing="false" onAction="#onDeleteClick" prefHeight="26.0" prefWidth="216.0" text="Delete Instance" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+             <ComboBox fx:id="versionComboBox" GridPane.rowIndex="2" />
          </children>
       </GridPane>
       <ListView fx:id="instanceListView" prefHeight="200.0" prefWidth="200.0" />
