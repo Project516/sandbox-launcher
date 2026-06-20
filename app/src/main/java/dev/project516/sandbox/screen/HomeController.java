@@ -2,6 +2,7 @@ package dev.project516.sandbox.screen;
 
 import dev.project516.sandbox.core.InstanceManager;
 import dev.project516.sandbox.core.MojangManager;
+import dev.project516.sandbox.core.SandboxManager;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
 import java.util.List;
@@ -33,6 +34,9 @@ public class HomeController {
     private Button deleteTestButton;
 
     @FXML
+    private ComboBox<Version> versionComboBox;
+
+    @FXML
     private void initialize() {
         List<Instance> loadedInstances = InstanceManager.loadInstances();
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
@@ -55,24 +59,24 @@ public class HomeController {
 
     @FXML
     private void onLaunchClick() {
-        System.out.println("Launch clicked");
+        // System.out.println("Launch clicked");
 
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            // System.out.println("Please select an instance!"); // TODO: print warning in app
-
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Selection");
             alert.setHeaderText("No Instance Selected!");
             alert.setContentText("Please select an Instance");
             alert.showAndWait();
             return;
-        } else {
-            System.out.println("Launching: : " + selected.name());
         }
 
-        // InstanceWindow instanceWindow = new InstanceWindow();
-        // instanceWindow.show();
+        System.out.println("Launching: : " + selected.name());
+
+        new Thread(() -> {
+                    SandboxManager.startPersistentContainer();
+                })
+                .start();
     }
 
     @FXML
@@ -114,7 +118,4 @@ public class HomeController {
         instanceListView.getItems().remove(selected);
         InstanceManager.saveInstances(instanceListView.getItems());
     }
-
-    @FXML
-    private ComboBox<Version> versionComboBox;
 }
