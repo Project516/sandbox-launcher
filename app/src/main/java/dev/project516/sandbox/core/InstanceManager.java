@@ -43,4 +43,27 @@ public class InstanceManager {
             e.printStackTrace();
         }
     }
+
+    public static void deleteVersionFiles(String mcVersion) {
+        Path versionPath = CONFIG_DIR.resolve("versions").resolve(mcVersion);
+
+        if (!Files.exists(versionPath)) {
+            return;
+        }
+
+        try {
+            Files.walk(versionPath)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            System.err.println("Failed to delete " + path);
+                        }
+                    });
+            System.out.println("[INSTANCE] Deleted files for " + mcVersion);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

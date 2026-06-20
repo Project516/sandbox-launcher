@@ -1,10 +1,12 @@
 package dev.project516.sandbox.screen;
 
+import dev.project516.sandbox.core.DownloadManager;
 import dev.project516.sandbox.core.InstanceManager;
 import dev.project516.sandbox.core.MojangManager;
 import dev.project516.sandbox.core.SandboxManager;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
+import java.nio.file.Path;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -98,9 +100,19 @@ public class HomeController {
         }
 
         Instance newInstance = new Instance("New Instance", selectedVersion.id());
-
         instanceListView.getItems().add(newInstance);
         InstanceManager.saveInstances(instanceListView.getItems());
+
+        new Thread(() -> {
+                    Path dest = Path.of(
+                            System.getProperty("user.home"),
+                            ".sandbox-launcher",
+                            "versions",
+                            selectedVersion.id(),
+                            selectedVersion.id() + ".json");
+                    DownloadManager.downloadFile(selectedVersion.url(), dest);
+                })
+                .start();
     }
 
     @FXML
