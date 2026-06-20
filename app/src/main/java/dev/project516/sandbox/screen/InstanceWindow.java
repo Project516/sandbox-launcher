@@ -5,8 +5,10 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+/** Instance window **/
 public class InstanceWindow {
 
+    /** Show instance window **/
     public void show() {
         Stage stage = new Stage();
         stage.setTitle("Minecraft Instance");

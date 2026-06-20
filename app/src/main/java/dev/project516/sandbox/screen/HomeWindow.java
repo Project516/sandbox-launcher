@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+/** Loads home window **/
 public class HomeWindow extends Application {
 
     @Override

@@ -14,6 +14,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 
+/** Home Menu **/
 public class HomeController {
 
     @FXML

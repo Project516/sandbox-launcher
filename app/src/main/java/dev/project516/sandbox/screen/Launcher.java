@@ -2,6 +2,7 @@ package dev.project516.sandbox.screen;
 
 import javafx.application.Application;
 
+/** JavaFX Launcher **/
 public class Launcher {
     public static void launch() {
 

@@ -9,11 +9,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Instance Manager - Manages File IO **/
 public class InstanceManager {
     private static final Path CONFIG_DIR = Path.of(System.getProperty("user.home"), ".sandbox-launcher");
     private static final Path INSTANCES_FILE = CONFIG_DIR.resolve("instances.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /** loads instance **/
     public static List<Instance> loadInstances() {
         try {
             if (!Files.exists(INSTANCES_FILE)) {
@@ -27,6 +29,7 @@ public class InstanceManager {
         }
     }
 
+    /** saves instance to disk **/
     public static void saveInstances(List<Instance> instances) {
         try {
             if (!Files.exists(CONFIG_DIR)) {

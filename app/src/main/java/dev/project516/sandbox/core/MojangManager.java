@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
+/** Fetches and parses version JSON from Mojang **/
 public class MojangManager {
     private static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
