@@ -48,6 +48,9 @@ public class HomeController {
                 .thenAccept(manifest -> {
                     if (manifest != null) {
                         Platform.runLater(() -> {
+                            List<Version> releasesOnly = manifest.versions().stream()
+                                    .filter(version -> version.type().equalsIgnoreCase("release"))
+                                    .toList();
                             versionComboBox.getItems().setAll(manifest.versions());
                         });
                     }
@@ -111,6 +114,8 @@ public class HomeController {
                             selectedVersion.id(),
                             selectedVersion.id() + ".json");
                     DownloadManager.downloadFile(selectedVersion.url(), dest);
+
+                    DownloadManager.downloadClientJar(dest, selectedVersion.id());
                 })
                 .start();
     }
@@ -127,6 +132,9 @@ public class HomeController {
             alert.showAndWait();
             return;
         }
+
+        InstanceManager.deleteVersionFiles(selected.mcVersion());
+
         instanceListView.getItems().remove(selected);
         InstanceManager.saveInstances(instanceListView.getItems());
     }

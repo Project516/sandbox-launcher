@@ -46,21 +46,22 @@ public class InstanceManager {
 
     public static void deleteVersionFiles(String mcVersion) {
         Path versionPath = CONFIG_DIR.resolve("versions").resolve(mcVersion);
+        System.out.println("[DEBUG] Attempting to delete: " + versionPath.toAbsolutePath());
 
         if (!Files.exists(versionPath)) {
+            System.out.println("[DEBUG] Folder not not exist! Nothing to delete.");
             return;
         }
 
         try {
-            Files.walk(versionPath)
-                    .sorted(java.util.Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            System.err.println("Failed to delete " + path);
-                        }
-                    });
+            Files.walk(versionPath).sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    System.out.println("[DEBUG] Deleting file: " + path);
+                    Files.delete(path);
+                } catch (IOException e) {
+                    System.err.println("Failed to delete " + path);
+                }
+            });
             System.out.println("[INSTANCE] Deleted files for " + mcVersion);
         } catch (IOException e) {
             e.printStackTrace();
