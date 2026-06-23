@@ -20,6 +20,8 @@ import javafx.scene.control.ListView;
 /** Home Menu **/
 public class HomeController {
 
+    private boolean isDownloading = false;
+
     @FXML
     private Button launchButton;
 
@@ -51,7 +53,7 @@ public class HomeController {
                             List<Version> releasesOnly = manifest.versions().stream()
                                     .filter(version -> version.type().equalsIgnoreCase("release"))
                                     .toList();
-                            versionComboBox.getItems().setAll(manifest.versions());
+                            versionComboBox.getItems().setAll(releasesOnly);
                         });
                     }
                 })
@@ -79,7 +81,7 @@ public class HomeController {
         System.out.println("Launching: : " + selected.name());
 
         new Thread(() -> {
-                    SandboxManager.startPersistentContainer();
+                    SandboxManager.launchInstanceInDocker(selected.mcVersion());
                 })
                 .start();
     }
@@ -92,6 +94,11 @@ public class HomeController {
 
     @FXML
     private void onAddClick() {
+        if (isDownloading) return;
+        isDownloading = true;
+        launchButton.setDisable(true);
+        addTestButton.setDisable(true);
+
         Version selectedVersion = versionComboBox.getSelectionModel().getSelectedItem();
         if (selectedVersion == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -113,9 +120,17 @@ public class HomeController {
                             "versions",
                             selectedVersion.id(),
                             selectedVersion.id() + ".json");
-                    DownloadManager.downloadFile(selectedVersion.url(), dest);
 
+                    DownloadManager.downloadFile(selectedVersion.url(), dest);
                     DownloadManager.downloadClientJar(dest, selectedVersion.id());
+                    DownloadManager.downloadLibraries(dest);
+
+                    Platform.runLater(() -> {
+                        isDownloading = false;
+                        launchButton.setDisable(false);
+                        addTestButton.setDisable(false);
+                        System.out.println("[UI] Download complete!");
+                    });
                 })
                 .start();
     }

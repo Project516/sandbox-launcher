@@ -1,6 +1,8 @@
 package dev.project516.sandbox.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.project516.sandbox.model.mojang.Artifact;
+import dev.project516.sandbox.model.mojang.Library;
 import dev.project516.sandbox.model.mojang.VersionInfo;
 import java.awt.*;
 import java.net.URI;
@@ -10,10 +12,12 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/** Download manager **/
 public class DownloadManager {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /** General Download file method **/
     public static void downloadFile(String fileUrl, Path destination) {
         try {
             if (destination.getParent() != null) {
@@ -38,6 +42,7 @@ public class DownloadManager {
         }
     }
 
+    /** Download Minecraft CLient Jar**/
     public static void downloadClientJar(Path versionJsonPath, String mcVersion) {
         try {
             VersionInfo info = MAPPER.readValue(versionJsonPath.toFile(), VersionInfo.class);
@@ -58,4 +63,37 @@ public class DownloadManager {
             e.printStackTrace();
         }
     }
+
+    /** Download required libraries for Minecraft **/
+    public static void downloadLibraries(Path versionJsonPath) {
+        try {
+            VersionInfo info = MAPPER.readValue(versionJsonPath.toFile(), VersionInfo.class);
+            if (info.libraries() == null) return;
+
+            Path libBaseDir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "libraries");
+
+            for (Library lib : info.libraries()) {
+                if (lib.downloads() == null || lib.downloads().artifact() == null) continue;
+
+                Artifact artifact = lib.downloads().artifact();
+                Path libPath = libBaseDir.resolve(artifact.path());
+
+                downloadFile(artifact.url(), libPath);
+            }
+
+            System.out.println("[DOWNLOAD] All libraries fetched.");
+        } catch (Exception e) {
+            System.err.println("[DOWNLOAD] Failed to parse libraries.");
+            e.printStackTrace();
+        }
+    }
+
+    /*
+    //TODO
+    public static void clearDirectory(Path dir) {
+        try {
+
+        }
+    }
+    */
 }
