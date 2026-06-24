@@ -125,6 +125,7 @@ public class HomeController {
                     DownloadManager.downloadFile(selectedVersion.url(), dest);
                     DownloadManager.downloadClientJar(dest, selectedVersion.id());
                     DownloadManager.downloadLibraries(dest);
+                    DownloadManager.extractNatives(dest, selectedVersion.id());
 
                     try {
                         VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);

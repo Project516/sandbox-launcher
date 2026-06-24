@@ -1,5 +1,4 @@
-FROM eclipse-temurin:8-jdk
+FROM eclipse-temurin:17-jdk
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libegl1 libglfw3 libgl1-mesa-dri \
-    libxtst6 libxxf86vm1 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*/*

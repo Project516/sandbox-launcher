@@ -1,6 +1,7 @@
 package dev.project516.sandbox.model.mojang;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record LibraryDownloads(Artifact artifact) {}
+public record LibraryDownloads(Artifact artifact, Map<String, Artifact> classifiers) {}

@@ -82,3 +82,13 @@ spotless {
         endWithNewline()
     }
 }
+
+/*
+tasks.register('build docker', Exec) {
+    description = 'Builds local docker containers'
+    group = 'Docker'
+
+    workingDir rootProject.projectDir
+    commandLine 'sh', "${rootProject.projectDir}/docker/build-docker.sh"
+}
+*/
