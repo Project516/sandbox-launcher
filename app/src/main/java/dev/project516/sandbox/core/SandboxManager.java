@@ -8,88 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SandboxManager {
-    /*
-    public static void testDocker() {
-        try {
-            ProcessBuilder builder = new ProcessBuilder("docker", "ps");
 
-            Process process = builder.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("[DOCKER] " + line);
-            }
-
-            int exitCode = process.waitFor();
-            System.out.println("[DOCKER] Exited with code: " + line);
-
-            if (exitCode != 0) {
-                System.err.println("Docker command failed! Is the Docker daemon running? code");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Failed to run docker command. Is Docker installed and added to your PATH?");
-            e.printStackTrace();
-        }
-    }
-
-    public static void runTestContainer() {
-        try {
-            ProcessBuilder builder = new ProcessBuilder("docker", "run", "--rm", "hello-world");
-            builder.redirectErrorStream(true);
-            Process process = builder.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("[DOCKER OUT] " + line);
-            }
-
-            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            while ((line = errorReader.readLine()) != null) {
-                System.err.println("[DOCKER ERR] " + line);
-            }
-
-            int exitCode = process.waitFor();
-            System.out.println("[DOCKER] Container finished with code: " + exitCode);
-        } catch (Exception e) {
-            System.err.println("Failed to run docker container.");
-            e.printStackTrace();
-        }
-    }
-
-    public static void startPersistentContainer() {
-        try {
-            ProcessBuilder builder = new ProcessBuilder("docker", "run", "-d", "ubuntu", "sleep", "infinity");
-            builder.redirectErrorStream(true);
-            Process process = builder.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-
-            String containerId = null;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("[DOCKER] " + line);
-                containerId = line.trim();
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode == 0 && containerId != null) {
-                System.out.println("[DOCKER] Successfully started sandbox! Container ID: " + containerId);
-                System.out.println("[Docker] Run `docker ps` in your terminal to see it running!");
-
-                System.out.println("[DOCKER] Stopping container.");
-                ProcessBuilder stopper = new ProcessBuilder("docker", "stop", containerId);
-                stopper.start().waitFor();
-                System.out.println("[DOCKER Stopped.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    */
     public static void launchInstanceInDocker(String mcVersion) {
         try {
             String home = System.getProperty("user.home");
@@ -113,13 +32,16 @@ public class SandboxManager {
 
             System.out.println("[DOCKER] Built classpath with: " + jarPaths.size() + " libraries.");
 
-            String shellCommand =
-                    "apt-get update && " + "apt-get install -y libgl1 libegl1 libglfw3 libgl1-mesa-dri && "
-                            + "java --enable-native-access=ALL-UNNAMED -cp \""
-                            + classpath + "\" net.minecraft.client.main.Main " + "--version "
-                            + mcVersion + " --accessToken 0 --gameDir /app/instances/" + mcVersion
-                            + " --assetsDir /app/assets --username SandboxPlayer";
+            String nativeAccessFlag = "";
+            if (!javaImage.equals("eclipse-temurin:8-jdk")) {
+                nativeAccessFlag = "--enable-native-access=ALL-UNNAMED ";
+            }
 
+            String shellCommand = "apt-get update && " +
+                    "apt-get install -y libgl1 libegl1 libglfw3 libgl1-mesa-dri && " +
+                    "java " + nativeAccessFlag + "-cp \"" + classpath + "\" net.minecraft.client.main.Main " +
+                    "--version " + mcVersion + " --accessToken 0 --gameDir /app/instances/" + mcVersion +
+                    " --assetsDir /app/assets --username SandboxPlayer";
             ProcessBuilder builder = new ProcessBuilder(
                     "docker",
                     "run",

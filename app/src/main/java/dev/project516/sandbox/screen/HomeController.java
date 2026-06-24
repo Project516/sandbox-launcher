@@ -6,6 +6,7 @@ import dev.project516.sandbox.core.MojangManager;
 import dev.project516.sandbox.core.SandboxManager;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
+import dev.project516.sandbox.model.mojang.VersionInfo;
 import java.nio.file.Path;
 import java.util.List;
 import javafx.application.Platform;
@@ -125,6 +126,12 @@ public class HomeController {
                     DownloadManager.downloadClientJar(dest, selectedVersion.id());
                     DownloadManager.downloadLibraries(dest);
 
+                    try {
+                        VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);
+                        DownloadManager.downloadAssets(info);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     Platform.runLater(() -> {
                         isDownloading = false;
                         launchButton.setDisable(false);

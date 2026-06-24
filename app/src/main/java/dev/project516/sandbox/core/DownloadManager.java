@@ -2,7 +2,6 @@ package dev.project516.sandbox.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.project516.sandbox.model.mojang.*;
-
 import java.awt.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,7 +14,7 @@ import java.util.Map;
 /** Download manager **/
 public class DownloadManager {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
     /** General Download file method **/
     public static void downloadFile(String fileUrl, Path destination) {
@@ -97,7 +96,6 @@ public class DownloadManager {
     }
     */
 
-    /*
     public static void downloadAssets(VersionInfo info) {
         if (info.assetIndex() == null) {
             System.err.println("[DOWNLOAD] No asset index found in version JSON.");
@@ -120,8 +118,20 @@ public class DownloadManager {
             for (Map.Entry<String, AssetObject> entry : assetObjects.objects().entrySet()) {
                 AssetObject asset = entry.getValue();
                 String hash = asset.hash();
+
+                String subDir = hash.substring(0, 2);
+                Path assetPath = objectsDir.resolve(subDir).resolve(hash);
+
+                if (!Files.exists(assetPath)) {
+                    String assetUrl = "https://resources.download.minecraft.net/" + subDir + "/" + hash;
+                    downloadFile(assetUrl, assetPath);
+                }
             }
+            System.out.println("[DOWNLOAD] All assets fetched.");
+
+        } catch (Exception e) {
+            System.err.println("[DOWNLOAD] Failed to process assets.");
+            e.printStackTrace();
         }
     }
-    */
 }
