@@ -1,7 +1,8 @@
 package dev.project516.sandbox.model.mojang;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record VersionInfo(String id, VersionDownloads downloads, List<Library> libraries, AssetIndex assetIndex) {}
+public record AssetIndex(String id, String url, long totalSize) {
+}

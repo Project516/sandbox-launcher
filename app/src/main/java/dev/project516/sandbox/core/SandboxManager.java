@@ -109,36 +109,35 @@ public class SandboxManager {
             }
 
             String classpath = jarPath + ":" + String.join(":", jarPaths);
+            String javaImage = getJavaImageForVersion(mcVersion);
 
             System.out.println("[DOCKER] Built classpath with: " + jarPaths.size() + " libraries.");
 
-            String javaImage = getJavaImageForVersion(mcVersion);
+            String shellCommand =
+                    "apt-get update && " + "apt-get install -y libgl1 libegl1 libglfw3 libgl1-mesa-dri && "
+                            + "java --enable-native-access=ALL-UNNAMED -cp \""
+                            + classpath + "\" net.minecraft.client.main.Main " + "--version "
+                            + mcVersion + " --accessToken 0 --gameDir /app/instances/" + mcVersion
+                            + " --assetsDir /app/assets --username SandboxPlayer";
 
             ProcessBuilder builder = new ProcessBuilder(
                     "docker",
                     "run",
                     "--rm",
+                    "--network",
+                    "host",
                     "-e",
                     "DISPLAY=:0",
                     "-v",
-                    "/tmp/.X11-unix:/tmp.X11-unix",
+                    "/tmp/.X11-unix:/tmp/.X11-unix",
+                    "--device",
+                    "/dev/dri",
                     "-v",
                     instanceDir + ":/app",
                     javaImage,
-                    "java",
-                    "-cp",
-                    classpath,
-                    "net.minecraft.client.main.Main",
-                    "--version",
-                    mcVersion,
-                    "--accessToken",
-                    "0",
-                    "--gameDir",
-                    "/app/instances/",
-                    "--assetsDir",
-                    "/app/assets",
-                    "--username",
-                    "Steve");
+                    "sh",
+                    "-c",
+                    shellCommand);
 
             builder.redirectErrorStream(true);
             Process process = builder.start();
@@ -189,7 +188,7 @@ public class SandboxManager {
                         System.out.println("[DOCKER] Using Java 16 for older versions.");
                         return "eclipse-temurin:16-jdk";
                     } else if (minor >= 18 && minor <= 21) {
-                        if ((minor == 20 && patch >= 5 || minor == 21)) {
+                        if ((minor == 20 && patch >= 5) || minor == 21) {
                             System.out.println("[DOCKER] Using Java 21 for modern versions.");
                             return "eclipse-temurin:21-jdk";
                         }

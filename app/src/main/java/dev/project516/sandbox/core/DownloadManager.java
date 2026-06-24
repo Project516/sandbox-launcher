@@ -1,9 +1,8 @@
 package dev.project516.sandbox.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.project516.sandbox.model.mojang.Artifact;
-import dev.project516.sandbox.model.mojang.Library;
-import dev.project516.sandbox.model.mojang.VersionInfo;
+import dev.project516.sandbox.model.mojang.*;
+
 import java.awt.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -11,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 /** Download manager **/
 public class DownloadManager {
@@ -93,6 +93,34 @@ public class DownloadManager {
     public static void clearDirectory(Path dir) {
         try {
 
+        }
+    }
+    */
+
+    /*
+    public static void downloadAssets(VersionInfo info) {
+        if (info.assetIndex() == null) {
+            System.err.println("[DOWNLOAD] No asset index found in version JSON.");
+            return;
+        }
+
+        Path assetsDir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "assets");
+        Path indexesDir = assetsDir.resolve("indexes");
+        Path objectsDir = assetsDir.resolve("objects");
+
+        try {
+            Path indexPath = indexesDir.resolve(info.assetIndex().id() + ".json");
+            downloadFile(info.assetIndex().url(), indexPath);
+
+            AssetObjects assetObjects = MAPPER.readValue(indexPath.toFile(), AssetObjects.class);
+            if (assetObjects.objects() == null) return;
+
+            System.out.println("[DOWNLOAD] Found " + assetObjects.objects().size() + " assets to download.");
+
+            for (Map.Entry<String, AssetObject> entry : assetObjects.objects().entrySet()) {
+                AssetObject asset = entry.getValue();
+                String hash = asset.hash();
+            }
         }
     }
     */
