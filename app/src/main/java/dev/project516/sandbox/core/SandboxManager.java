@@ -39,10 +39,20 @@ public class SandboxManager {
                     "--rm",
                     "-e",
                     "DISPLAY=:0",
+                    "-e",
+                    "XDG_RUNTIME_DIR=/run/user/1000",
+                    "-e",
+                    "PULSE_SERVER=unix:/run/user/1000/pulse/native",
+                    "--add-host",
+                    "s3.amazonaws.com:127.0.0.1",
                     "-v",
                     "/tmp/.X11-unix:/tmp/.X11-unix",
+                    "-v",
+                    "/run/user/1000:/run/user/1000",
                     "--device",
                     "/dev/dri",
+                    "--device",
+                    "/dev/snd",
                     "-v",
                     instanceDir + ":/app",
                     javaImage,
@@ -67,7 +77,7 @@ public class SandboxManager {
 
             if (isOldVersion) {
                 command.addAll(List.of(
-                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives", // ADD THIS
+                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
                         "-cp",
                         classpath,
                         "net.minecraft.client.Minecraft",
@@ -79,7 +89,7 @@ public class SandboxManager {
                         "/app/assets"));
             } else {
                 command.addAll(List.of(
-                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives", // ADD THIS
+                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
                         "-cp",
                         classpath,
                         "net.minecraft.client.main.Main",
@@ -92,7 +102,7 @@ public class SandboxManager {
                         "--assetsDir",
                         "/app/assets",
                         "--username",
-                        "SandboxPlayer"));
+                        PlayerManager.getUsername()));
             }
 
             ProcessBuilder builder = new ProcessBuilder(command);
@@ -124,31 +134,31 @@ public class SandboxManager {
                 int patch = (parts.length >= 3) ? Integer.parseInt(parts[2]) : 0;
 
                 if (major >= 26) {
-                    System.out.println("[DOCKER] Using Java 25 for version 26.x+");
+                    System.out.println("[DOCKER] Using Java 25");
                     return "sandbox-java25";
                 }
 
                 if (major == 1) {
                     if (minor <= 16) {
-                        System.out.println("[DOCKER] Using custom Java 8 image.");
+                        System.out.println("[DOCKER] Using Java 8.");
                         return "sandbox-java8";
                     } else if (minor == 17) {
-                        System.out.println("[DOCKER] Using Java 16 for older versions.");
+                        System.out.println("[DOCKER] Using Java 16.");
                         return "sandbox-java16";
                     } else if (minor >= 18 && minor <= 21) {
                         if ((minor == 20 && patch >= 5) || minor == 21) {
-                            System.out.println("[DOCKER] Using custom Java 21 image.");
+                            System.out.println("[DOCKER] Using Java 21.");
                             return "sandbox-java21";
                         }
-                        System.out.println("[DOCKER] Using Java 17 for versions 1.18 to 1.20.4");
+                        System.out.println("[DOCKER] Using Java 17.");
                         return "sandbox-java17";
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Could not parse version " + mcVersion + " defaulting to Java 21.");
+            System.err.println("Could not parse version " + mcVersion + " defaulting to Java 25.");
         }
-        System.out.println("[DOCKER] Using default Java 21.");
-        return "sandbox-java21";
+        System.out.println("[DOCKER] Using Java 25.");
+        return "sandbox-java25";
     }
 }

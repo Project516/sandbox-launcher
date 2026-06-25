@@ -88,15 +88,6 @@ public class DownloadManager {
         }
     }
 
-    /*
-    //TODO
-    public static void clearDirectory(Path dir) {
-        try {
-
-        }
-    }
-    */
-
     /** Downloads assets required for Minecraft**/
     public static void downloadAssets(VersionInfo info) {
         if (info.assetIndex() == null) {
@@ -161,7 +152,7 @@ public class DownloadManager {
                     java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
                     while (entries.hasMoreElements()) {
                         java.util.jar.JarEntry entry = entries.nextElement();
-                        if (entry.getName().equals("natives-linux.so")) {
+                        if (entry.getName().endsWith(".so")) {
                             Path outFile = nativesDir.resolve(entry.getName());
                             Files.createDirectories(outFile.getParent());
                             Files.copy(jar.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);

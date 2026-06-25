@@ -13,10 +13,13 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListView;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 /** Home Menu **/
 public class HomeController {
@@ -47,6 +50,44 @@ public class HomeController {
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
         instanceListView.setItems(observableInstances);
 
+        instanceListView.setCellFactory(listView -> new ListCell<Instance>() {
+            private final ImageView iconView = new ImageView();
+            private final Label nameLabel = new Label();
+            private final Label versionLabel = new Label();
+            private final VBox textBox = new VBox(nameLabel, versionLabel);
+            private final HBox layout = new HBox(10, iconView, textBox);
+
+            {
+                iconView.setFitWidth(32);
+                iconView.setFitHeight(32);
+
+                try {
+                    Image icon = new Image(getClass().getResource("icon.png").toExternalForm());
+                    iconView.setImage(icon);
+                } catch (Exception e) {
+                    System.err.println("Could not load icon.png");
+                }
+
+                versionLabel.setStyle("-fx-text-fill: derive(-fx-text-background-color, -30%); -fx-font-size: 11px;");
+
+                layout.setPadding(new Insets(5, 5, 5, 5));
+                layout.setAlignment(Pos.CENTER_LEFT);
+            }
+
+            @Override
+            protected void updateItem(Instance instance, boolean empty) {
+                super.updateItem(instance, empty);
+
+                if (empty || instance == null) {
+                    setGraphic(null);
+                } else {
+                    nameLabel.setText(instance.name());
+                    versionLabel.setText("Minecraft " + instance.mcVersion());
+                    setGraphic(layout);
+                }
+            }
+        });
+
         MojangManager.fetchVersionManifest()
                 .thenAccept(manifest -> {
                     if (manifest != null) {
@@ -67,8 +108,6 @@ public class HomeController {
 
     @FXML
     private void onLaunchClick() {
-        // System.out.println("Launch clicked");
-
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
         if (selected == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -160,5 +199,10 @@ public class HomeController {
 
         instanceListView.getItems().remove(selected);
         InstanceManager.saveInstances(instanceListView.getItems());
+    }
+
+    @FXML
+    private void usernameBar() {
+        // TODO make a bar for setting/editing username
     }
 }
