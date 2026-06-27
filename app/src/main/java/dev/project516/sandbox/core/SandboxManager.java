@@ -81,6 +81,7 @@ public class SandboxManager {
                         "-cp",
                         classpath,
                         "net.minecraft.client.Minecraft",
+                        PlayerManager.getUsername(),
                         "-token",
                         "0",
                         "--gameDir",

@@ -13,13 +13,11 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 /** Home Menu **/
 public class HomeController {
@@ -50,43 +48,7 @@ public class HomeController {
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
         instanceListView.setItems(observableInstances);
 
-        instanceListView.setCellFactory(listView -> new ListCell<Instance>() {
-            private final ImageView iconView = new ImageView();
-            private final Label nameLabel = new Label();
-            private final Label versionLabel = new Label();
-            private final VBox textBox = new VBox(nameLabel, versionLabel);
-            private final HBox layout = new HBox(10, iconView, textBox);
-
-            {
-                iconView.setFitWidth(32);
-                iconView.setFitHeight(32);
-
-                try {
-                    Image icon = new Image(getClass().getResource("icon.png").toExternalForm());
-                    iconView.setImage(icon);
-                } catch (Exception e) {
-                    System.err.println("Could not load icon.png");
-                }
-
-                versionLabel.setStyle("-fx-text-fill: derive(-fx-text-background-color, -30%); -fx-font-size: 11px;");
-
-                layout.setPadding(new Insets(5, 5, 5, 5));
-                layout.setAlignment(Pos.CENTER_LEFT);
-            }
-
-            @Override
-            protected void updateItem(Instance instance, boolean empty) {
-                super.updateItem(instance, empty);
-
-                if (empty || instance == null) {
-                    setGraphic(null);
-                } else {
-                    nameLabel.setText(instance.name());
-                    versionLabel.setText("Minecraft " + instance.mcVersion());
-                    setGraphic(layout);
-                }
-            }
-        });
+        instanceListView.setCellFactory(listView -> new InstanceListCell());
 
         MojangManager.fetchVersionManifest()
                 .thenAccept(manifest -> {
@@ -201,8 +163,18 @@ public class HomeController {
         InstanceManager.saveInstances(instanceListView.getItems());
     }
 
-    @FXML
-    private void usernameBar() {
-        // TODO make a bar for setting/editing username
+    public void onSettingsClick() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("settings.fxml"));
+            VBox root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Settings");
+            stage.setScene(new Scene(root));
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
