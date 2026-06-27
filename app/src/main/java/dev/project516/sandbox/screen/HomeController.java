@@ -7,8 +7,10 @@ import dev.project516.sandbox.core.SandboxManager;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionInfo;
+import dev.project516.sandbox.model.mojang.VersionManifest;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,6 +23,12 @@ import javafx.stage.Stage;
 
 /** Home Menu **/
 public class HomeController {
+
+    @FXML
+    public Button settingsButton;
+
+    @FXML
+    public Button renameButton;
 
     private boolean isDownloading = false;
 
@@ -50,6 +58,14 @@ public class HomeController {
 
         instanceListView.setCellFactory(listView -> new InstanceListCell());
 
+        VersionManifest localManifest = MojangManager.loadLocalManifest();
+        if (localManifest != null) {
+            List<Version> releaseOnly = localManifest.versions().stream()
+                    .filter(v -> v.type().equalsIgnoreCase("release"))
+                    .toList();
+            versionComboBox.getItems().addAll(releaseOnly);
+        }
+
         MojangManager.fetchVersionManifest()
                 .thenAccept(manifest -> {
                     if (manifest != null) {
@@ -63,7 +79,6 @@ public class HomeController {
                 })
                 .exceptionally(e -> {
                     System.err.println("Failed to fetch versions!");
-                    e.printStackTrace();
                     return null;
                 });
     }
@@ -111,7 +126,15 @@ public class HomeController {
             return;
         }
 
-        Instance newInstance = new Instance("New Instance", selectedVersion.id());
+        TextInputDialog dialog = new TextInputDialog("New Instance");
+        dialog.setTitle("New Instance");
+        dialog.setHeaderText("Creating instance for " + selectedVersion.id());
+        dialog.setContentText("Enter instance name:");
+        Optional<String> result = dialog.showAndWait();
+
+        String name = result.filter(s -> !s.trim().isEmpty()).orElse("New Instance");
+
+        Instance newInstance = new Instance(name, selectedVersion.id());
         instanceListView.getItems().add(newInstance);
         InstanceManager.saveInstances(instanceListView.getItems());
 
@@ -176,5 +199,36 @@ public class HomeController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void onRenameClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to rename!");
+            alert.showAndWait();
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog(selected.name());
+        dialog.setTitle("Rename Instance");
+        dialog.setHeaderText("Renaming " + selected.name());
+        dialog.setContentText("Enter new name:");
+
+        Optional<String> result = dialog.showAndWait();
+
+        result.ifPresent(newName -> {
+            if (!newName.trim().isEmpty()) {
+                int index = instanceListView.getItems().indexOf(selected);
+
+                Instance renamed = new Instance(newName.trim(), selected.mcVersion());
+
+                instanceListView.getItems().set(index, renamed);
+
+                InstanceManager.saveInstances(instanceListView.getItems());
+            }
+        });
     }
 }

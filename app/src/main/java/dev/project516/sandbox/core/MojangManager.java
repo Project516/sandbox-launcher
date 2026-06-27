@@ -6,14 +6,29 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 /** Fetches and parses version JSON from Mojang **/
 public class MojangManager {
     private static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
+    private static final Path MANIFEST_FILE =
+            Path.of(System.getProperty("user.home"), ".sandbox-launcher", "manifest.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+
+    public static VersionManifest loadLocalManifest() {
+        try {
+            if (Files.exists(MANIFEST_FILE)) {
+                return MAPPER.readValue(MANIFEST_FILE.toFile(), VersionManifest.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public static CompletableFuture<VersionManifest> fetchVersionManifest() {
         HttpRequest request =
@@ -24,7 +39,10 @@ public class MojangManager {
                 .thenApply(HttpResponse::body)
                 .thenApply(json -> {
                     try {
-                        return MAPPER.readValue(json, VersionManifest.class);
+                        VersionManifest manifest = MAPPER.readValue(json, VersionManifest.class);
+                        Files.createDirectories(MANIFEST_FILE.getParent());
+                        Files.writeString(MANIFEST_FILE, json);
+                        return manifest;
                     } catch (Exception e) {
                         throw new CompletionException(e);
                     }
