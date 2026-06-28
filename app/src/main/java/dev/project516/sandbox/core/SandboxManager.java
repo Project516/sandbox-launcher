@@ -6,11 +6,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
-    public static void launchInstanceInDocker(String mcVersion) {
+    public static Process launchInstanceInDocker(String mcVersion, Consumer<String> logConsumer) {
         try {
             String home = System.getProperty("user.home");
             String instanceDir = home + "/.sandbox-launcher";
@@ -31,7 +32,7 @@ public class SandboxManager {
             String classpath = jarPath + ":" + String.join(":", jarPaths);
             String javaImage = getJavaImageForVersion(mcVersion);
 
-            System.out.println("[DOCKER] Launching with image: " + javaImage);
+            logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
 
             List<String> command = new ArrayList<>(List.of(
                     "docker",
@@ -110,18 +111,27 @@ public class SandboxManager {
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("[DOCKER] " + line);
-            }
+            new Thread(() -> {
+                        try (BufferedReader reader =
+                                new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                logConsumer.accept("[DOCKER] " + line);
+                            }
+                            int exitCode = process.waitFor();
+                            logConsumer.accept("[DOCKER] Instance exited with code: " + exitCode);
+                        } catch (Exception e) {
+                            logConsumer.accept("[DOCKER] Error reading process output: " + e.getMessage());
+                        }
+                    })
+                    .start();
 
-            int exitCode = process.waitFor();
-            System.out.println("[DOCKER] Instance exited with code: " + exitCode);
+            return process;
 
         } catch (Exception e) {
-            System.err.println("Failed to launch instance in Docker.");
+            logConsumer.accept("[DOCKER] Failed to launch instance: " + e.getMessage());
             e.printStackTrace();
+            return null;
         }
     }
 

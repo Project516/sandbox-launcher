@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 /** Manage Player settings **/
 public class PlayerManager {
-    private static final Path CONFIG_DIR = Path.of(System.getProperty("user.home"), ".sandbox");
+    private static final Path CONFIG_DIR = Path.of(System.getProperty("user.home"), ".sandbox-launcher");
     private static final Path SETTINGS_FILE = CONFIG_DIR.resolve("settings.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

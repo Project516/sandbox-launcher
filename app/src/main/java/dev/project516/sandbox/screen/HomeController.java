@@ -16,9 +16,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /** Home Menu **/
@@ -95,12 +98,26 @@ public class HomeController {
             return;
         }
 
-        System.out.println("Launching: : " + selected.name());
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("console.fxml"));
+            VBox root = loader.load();
+            ConsoleController consoleController = loader.getController();
 
-        new Thread(() -> {
-                    SandboxManager.launchInstanceInDocker(selected.mcVersion());
-                })
-                .start();
+            Stage consoleStage = new Stage();
+            consoleStage.setTitle("Console - " + selected.name());
+            consoleStage.setScene(new Scene(root));
+            consoleController.setStage(consoleStage);
+            consoleStage.show();
+
+            new Thread(() -> {
+                        Process proc = SandboxManager.launchInstanceInDocker(
+                                selected.mcVersion(), consoleController.getOutputConsumer());
+                        Platform.runLater(() -> consoleController.setProcess(proc));
+                    })
+                    .start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -131,12 +148,25 @@ public class HomeController {
         dialog.setHeaderText("Creating instance for " + selectedVersion.id());
         dialog.setContentText("Enter instance name:");
         Optional<String> result = dialog.showAndWait();
-
         String name = result.filter(s -> !s.trim().isEmpty()).orElse("New Instance");
 
         Instance newInstance = new Instance(name, selectedVersion.id());
         instanceListView.getItems().add(newInstance);
         InstanceManager.saveInstances(instanceListView.getItems());
+
+        Label statusLabel = new Label("Starting download...");
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setProgress(-1.0);
+
+        VBox popupVBox = new VBox(15, statusLabel, progressBar);
+        popupVBox.setAlignment(Pos.CENTER);
+        popupVBox.setPadding(new Insets(20));
+
+        Stage popupStage = new Stage();
+        popupStage.setTitle("Downloading " + name);
+        popupStage.setScene(new Scene(popupVBox, 300, 100));
+        popupStage.initModality(Modality.APPLICATION_MODAL);
+        popupStage.show();
 
         new Thread(() -> {
                     Path dest = Path.of(
@@ -146,13 +176,20 @@ public class HomeController {
                             selectedVersion.id(),
                             selectedVersion.id() + ".json");
 
+                    Platform.runLater(() -> statusLabel.setText("Fetching version JSON..."));
                     DownloadManager.downloadFile(selectedVersion.url(), dest);
+
+                    Platform.runLater(() -> statusLabel.setText("Downloading client JAR..."));
                     DownloadManager.downloadClientJar(dest, selectedVersion.id());
+
+                    Platform.runLater(() -> statusLabel.setText("Downloading libraries..."));
                     DownloadManager.downloadLibraries(dest);
                     DownloadManager.extractNatives(dest, selectedVersion.id());
 
                     try {
                         VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);
+
+                        Platform.runLater(() -> statusLabel.setText("Downloading assets (this may take a while)..."));
                         DownloadManager.downloadAssets(info);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -161,6 +198,7 @@ public class HomeController {
                         isDownloading = false;
                         launchButton.setDisable(false);
                         addTestButton.setDisable(false);
+                        popupStage.close();
                         System.out.println("[UI] Download complete!");
                     });
                 })
