@@ -8,7 +8,10 @@ import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionInfo;
 import dev.project516.sandbox.model.mojang.VersionManifest;
+import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import javafx.application.Platform;
@@ -21,6 +24,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -189,7 +193,7 @@ public class HomeController {
                     try {
                         VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);
 
-                        Platform.runLater(() -> statusLabel.setText("Downloading assets (this may take a while)..."));
+                        Platform.runLater(() -> statusLabel.setText("Downloading assets (this may take a bit)..."));
                         DownloadManager.downloadAssets(info);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -268,5 +272,45 @@ public class HomeController {
                 InstanceManager.saveInstances(instanceListView.getItems());
             }
         });
+    }
+
+    @FXML
+    public void onSetIconClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to change its icon!");
+            alert.showAndWait();
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Instance Icon");
+        fileChooser
+                .getExtensionFilters()
+                .addAll(new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
+        File selectedFile =
+                fileChooser.showOpenDialog(instanceListView.getScene().getWindow());
+
+        if (selectedFile != null) {
+            try {
+                Path iconsDir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "icons");
+                Files.createDirectories(iconsDir);
+
+                String safeFileName = selected.name().replaceAll("[^a-zA-Z0-9]", "_") + ".png";
+                Path destPath = iconsDir.resolve(safeFileName);
+                Files.copy(selectedFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
+
+                int index = instanceListView.getItems().indexOf(selected);
+                Instance updatedInstance = new Instance(selected.name(), selected.mcVersion(), destPath.toString());
+
+                instanceListView.getItems().set(index, updatedInstance);
+                InstanceManager.saveInstances(instanceListView.getItems());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

@@ -1,6 +1,8 @@
 package dev.project516.sandbox.screen;
 
 import dev.project516.sandbox.model.Instance;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.image.Image;
@@ -45,6 +47,18 @@ public class InstanceListCell extends ListCell<Instance> {
         } else {
             nameLabel.setText(instance.name());
             versionLabel.setText("Minecraft " + instance.mcVersion());
+
+            if (instance.iconPath() != null && Files.exists(Path.of(instance.iconPath()))) {
+                iconView.setImage(new Image("file:" + instance.iconPath()));
+            } else {
+                try {
+                    iconView.setImage(
+                            new Image(getClass().getResource("icon.png").toExternalForm()));
+                } catch (Exception e) {
+                    System.err.println("Could not load default icon.png.");
+                }
+            }
+
             setGraphic(layout);
         }
     }
