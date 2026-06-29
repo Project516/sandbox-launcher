@@ -1,9 +1,13 @@
 package dev.project516.sandbox.model;
 
-public record Instance(String name, String mcVersion, String iconPath) {
+public record Instance(String name, String mcVersion, String iconPath, String modLoader) {
+
+    public Instance(String name, String mcVersion, String iconPath) {
+        this(name, mcVersion, iconPath, "vanilla");
+    }
 
     public Instance(String name, String mcVersion) {
-        this(name, mcVersion, null);
+        this(name, mcVersion, null, "vanilla");
     }
 
     @Override

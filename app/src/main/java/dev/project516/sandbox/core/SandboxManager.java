@@ -1,5 +1,6 @@
 package dev.project516.sandbox.core;
 
+import dev.project516.sandbox.model.Instance;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -11,8 +12,9 @@ import java.util.function.Consumer;
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
-    public static Process launchInstanceInDocker(String mcVersion, Consumer<String> logConsumer) {
+    public static Process launchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
         try {
+            String mcVersion = instance.mcVersion();
             String home = System.getProperty("user.home");
             String instanceDir = home + "/.sandbox-launcher";
             String jarPath = "/app/versions/" + mcVersion + "/" + mcVersion + ".jar";
@@ -82,7 +84,24 @@ public class SandboxManager {
             } catch (Exception ignored) {
             }
 
-            if (isOldVersion) {
+            if (instance.modLoader().equalsIgnoreCase("fabric")) {
+                logConsumer.accept("[DEBUG] Launching with Fabric Mod Loader!");
+                command.addAll(List.of(
+                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
+                        "-cp",
+                        classpath,
+                        "net.fabricmc.loader.launch.knot.Client",
+                        "--username",
+                        PlayerManager.getUsername(),
+                        "--version",
+                        mcVersion,
+                        "--gameDir",
+                        "/app/instances/" + mcVersion,
+                        "--assetsDir",
+                        "/app/assets",
+                        "--accessToken",
+                        "0"));
+            } else if (isOldVersion) {
                 command.addAll(List.of(
                         "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
                         "-cp",

@@ -1,10 +1,8 @@
 package dev.project516.sandbox.screen;
 
-import dev.project516.sandbox.core.DownloadManager;
-import dev.project516.sandbox.core.InstanceManager;
-import dev.project516.sandbox.core.MojangManager;
-import dev.project516.sandbox.core.SandboxManager;
+import dev.project516.sandbox.core.*;
 import dev.project516.sandbox.model.Instance;
+import dev.project516.sandbox.model.fabric.FabricVersionInfo;
 import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionInfo;
 import dev.project516.sandbox.model.mojang.VersionManifest;
@@ -36,6 +34,9 @@ public class HomeController {
 
     @FXML
     public Button renameButton;
+
+    @FXML
+    public Button fabricButton;
 
     private boolean isDownloading = false;
 
@@ -114,8 +115,8 @@ public class HomeController {
             consoleStage.show();
 
             new Thread(() -> {
-                        Process proc = SandboxManager.launchInstanceInDocker(
-                                selected.mcVersion(), consoleController.getOutputConsumer());
+                        Process proc =
+                                SandboxManager.launchInstanceInDocker(selected, consoleController.getOutputConsumer());
                         Platform.runLater(() -> consoleController.setProcess(proc));
                     })
                     .start();
@@ -312,5 +313,48 @@ public class HomeController {
                 e.printStackTrace();
             }
         }
+    }
+
+    @FXML
+    public void onInstallFabricClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to install Fabric!");
+            alert.showAndWait();
+            return;
+        }
+        fabricButton.setDisable(true);
+
+        new Thread(() -> {
+                    try {
+                        System.out.println("[FABRIC] Fetching loader for " + selected.mcVersion());
+                        FabricVersionInfo fabricInfo = FabricManager.fetchLatestLoader(selected.mcVersion());
+
+                        if (fabricInfo != null) {
+                            Platform.runLater(() -> System.out.println("[FABRIC] Downloading Fabric libraries..."));
+                            FabricManager.downloadFabricLibraries(fabricInfo);
+
+                            int index = instanceListView.getItems().indexOf(selected);
+                            Instance fabricInstance =
+                                    new Instance(selected.name(), selected.mcVersion(), selected.iconPath(), "fabric");
+
+                            Platform.runLater(() -> {
+                                instanceListView.getItems().set(index, fabricInstance);
+                                InstanceManager.saveInstances(instanceListView.getItems());
+                                System.out.println("[FABRIC] Installation complete!");
+                            });
+                        } else {
+                            System.err.println("[FABRIC] Could not find a loader for this version!");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        Platform.runLater(() -> fabricButton.setDisable(false));
+                    }
+                })
+                .start();
     }
 }
