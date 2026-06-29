@@ -32,6 +32,10 @@ public class SandboxManager {
             String classpath = jarPath + ":" + String.join(":", jarPaths);
             String javaImage = getJavaImageForVersion(mcVersion);
 
+            Path localJarPath = Path.of(home, ".sandbox-launcher", "versions", mcVersion, mcVersion + ".jar");
+            logConsumer.accept("[DEBUG Local JAR exists: " + Files.exists(localJarPath) + " (" + localJarPath + ")");
+            logConsumer.accept("[DEBUG] Classpath: " + classpath);
+
             logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
 
             List<String> command = new ArrayList<>(List.of(
@@ -44,6 +48,8 @@ public class SandboxManager {
                     "XDG_RUNTIME_DIR=/run/user/1000",
                     "-e",
                     "PULSE_SERVER=unix:/run/user/1000/pulse/native",
+                    "-e",
+                    "LIBGL_ALWAYS_SOFTWARE=1",
                     "--add-host",
                     "s3.amazonaws.com:127.0.0.1",
                     "-v",
