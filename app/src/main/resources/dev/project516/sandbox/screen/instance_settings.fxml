@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox alignment="CENTER" prefHeight="200.0" prefWidth="400.0" spacing="15.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.project516.sandbox.screen.InstanceSettingsController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+
+    <Label text="Instance Settings" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+
+    <HBox alignment="CENTER" spacing="10.0">
+        <Label text="Instance Name:" prefWidth="100" />
+        <TextField fx:id="nameField" prefWidth="200" />
+    </HBox>
+
+    <HBox alignment="CENTER" spacing="10.0">
+        <Label text="Mod Loader:" prefWidth="100" />
+        <ComboBox fx:id="modLoaderCombo" prefWidth="200" />
+    </HBox>
+
+    <HBox alignment="CENTER" spacing="10.0">
+        <Button fx:id="installButton" onAction="#onInstallClick" text="Install Selected Loader" />
+    </HBox>
+
+    <HBox alignment="CENTER_RIGHT" spacing="10.0">
+        <Button fx:id="saveButton" onAction="#onSaveClick" text="Save & Close" />
+        <Button fx:id="cancelButton" onAction="#onCancelClick" text="Cancel" />
+    </HBox>
+</VBox>

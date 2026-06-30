@@ -357,4 +357,38 @@ public class HomeController {
                 })
                 .start();
     }
+
+    public void onEditClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to edit!");
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("instance_settings.fxml"));
+            VBox root = loader.load();
+            InstanceSettingsController settingsController = loader.getController();
+
+            Stage stage = new Stage();
+            stage.setTitle("Settings - " + selected.name());
+            settingsController.setStage(stage);
+            settingsController.setInstance(selected);
+
+            settingsController.setOnSaveCallback(updateInstance -> {
+                int index = instanceListView.getItems().indexOf(selected);
+                instanceListView.getItems().set(index, updateInstance);
+                InstanceManager.saveInstances(instanceListView.getItems());
+            });
+
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

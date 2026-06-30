@@ -29,6 +29,7 @@
              <Button fx:id="fabricButton" mnemonicParsing="false" onAction="#onInstallFabricClick" prefHeight="26.0" prefWidth="116.0" text="Install Fabric" GridPane.columnIndex="2" GridPane.rowIndex="2" />
             <Button fx:id="addTestButton" mnemonicParsing="false" onAction="#onAddClick" prefHeight="26.0" prefWidth="217.0" text="Add Instance" GridPane.columnIndex="1" />
             <Button fx:id="deleteTestButton" mnemonicParsing="false" onAction="#onDeleteClick" prefHeight="26.0" prefWidth="216.0" text="Delete Instance" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+             <Button fx:id="editButton" mnemonicParsing="false" onAction="#onEditClick" prefHeight="26.0" prefWidth="116.0" text="Edit Instance" GridPane.columnIndex="2" GridPane.rowIndex="1" />
              <Button fx:id="renameButton" mnemonicParsing="false" onAction="#onRenameClick" prefHeight="26.0" prefWidth="216.0" text="Rename Instance" GridPane.columnIndex="1" GridPane.rowIndex="2" />
              <ComboBox fx:id="versionComboBox" GridPane.rowIndex="2" />
          </children>
