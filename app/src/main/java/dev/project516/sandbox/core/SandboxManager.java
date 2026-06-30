@@ -84,24 +84,25 @@ public class SandboxManager {
             } catch (Exception ignored) {
             }
 
-            if (instance.modLoader().equalsIgnoreCase("fabric")) {
-                logConsumer.accept("[DEBUG] Launching with Fabric Mod Loader!");
-                command.addAll(List.of(
-                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
-                        "-cp",
-                        classpath,
-                        "net.fabricmc.loader.launch.knot.Client",
-                        "--username",
-                        PlayerManager.getUsername(),
-                        "--version",
-                        mcVersion,
-                        "--gameDir",
-                        "/app/instances/" + mcVersion,
-                        "--assetsDir",
-                        "/app/assets",
-                        "--accessToken",
-                        "0"));
-            } else if (isOldVersion) {
+            // if (instance.modLoader().equalsIgnoreCase("fabric")) {
+            //     logConsumer.accept("[DEBUG] Launching with Fabric Mod Loader!");
+            //     command.addAll(List.of(
+            //             "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
+            //             "-cp",
+            //             classpath,
+            //             "net.fabricmc.loader.launch.knot.Client",
+            //             "--username",
+            //             PlayerManager.getUsername(),
+            //             "--version",
+            //             mcVersion,
+            //             "--gameDir",
+            //             "/app/instances/" + mcVersion,
+            //             "--assetsDir",
+            //             "/app/assets",
+            //             "--accessToken",
+            //             "0"));
+            // } else
+            if (isOldVersion) {
                 command.addAll(List.of(
                         "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
                         "-cp",
