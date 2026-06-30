@@ -1,5 +1,6 @@
 # todo
 
 * add microsoft auth
-* have different icons for instances
 * add mod support
+* fix launching
+* bundle a way to make it isolated

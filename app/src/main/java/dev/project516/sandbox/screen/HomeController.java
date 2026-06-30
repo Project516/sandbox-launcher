@@ -35,6 +35,7 @@ public class HomeController {
     @FXML
     public Button renameButton;
 
+    //TODO
     // @FXML
     // public Button fabricButton;
 
@@ -315,6 +316,7 @@ public class HomeController {
         }
     }
 
+    //TODO
     // @FXML
     // public void onInstallFabricClick() {
     //     Instance selected = instanceListView.getSelectionModel().getSelectedItem();
@@ -359,6 +361,7 @@ public class HomeController {
     //             .start();
     // }
 
+    //TODO
     // public void onEditClick() {
     //     Instance selected = instanceListView.getSelectionModel().getSelectedItem();
     //     if (selected == null) {
