@@ -24,4 +24,4 @@ Currently the way to setup and use this is to:
 2. Run `/docker/build-docker.sh` to build the docker containers
 3. Run `./gradlew run` to launch the project
 
-From here, you can select and instance to install and run it.
+From here, you can select an instance to install and run it.
