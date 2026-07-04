@@ -12,7 +12,8 @@ import java.util.function.Consumer;
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
-    public static Process launchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
+    public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
+
         try {
             String mcVersion = instance.mcVersion();
             String home = System.getProperty("user.home");

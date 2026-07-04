@@ -29,6 +29,8 @@ import javafx.stage.Stage;
 /** Home Menu **/
 public class HomeController {
 
+    String osName = System.getProperty("os.name").toLowerCase();
+
     @FXML
     public Button settingsButton;
 
@@ -115,12 +117,15 @@ public class HomeController {
             consoleController.setStage(consoleStage);
             consoleStage.show();
 
-            new Thread(() -> {
-                        Process proc =
-                                SandboxManager.launchInstanceInDocker(selected, consoleController.getOutputConsumer());
-                        Platform.runLater(() -> consoleController.setProcess(proc));
-                    })
-                    .start();
+            if (osName.contains("linux")) {
+
+                new Thread(() -> {
+                            Process proc = SandboxManager.linuxLaunchInstanceInDocker(
+                                    selected, consoleController.getOutputConsumer());
+                            Platform.runLater(() -> consoleController.setProcess(proc));
+                        })
+                        .start();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
