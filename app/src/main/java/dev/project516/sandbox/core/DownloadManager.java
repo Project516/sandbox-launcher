@@ -149,11 +149,16 @@ public class DownloadManager {
                 System.out.println("[DOWNLOAD] Extracted natives for " + lib.name());
 
                 try (java.util.jar.JarFile jar = new java.util.jar.JarFile(tempJar.toFile())) {
+                    Path normalizedNativesDir = nativesDir.toAbsolutePath().normalize();
                     java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
                     while (entries.hasMoreElements()) {
                         java.util.jar.JarEntry entry = entries.nextElement();
                         if (entry.getName().endsWith(".so")) {
-                            Path outFile = nativesDir.resolve(entry.getName());
+                            Path outFile = normalizedNativesDir.resolve(entry.getName()).normalize();
+                            if (!outFile.startsWith(normalizedNativesDir)) {
+                                System.err.println("[DOWNLOADS] Skipping suspicious native entry: " + entry.getName());
+                                continue;
+                            }
                             Files.createDirectories(outFile.getParent());
                             Files.copy(jar.getInputStream(entry), outFile, StandardCopyOption.REPLACE_EXISTING);
                         }
