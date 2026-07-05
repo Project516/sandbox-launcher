@@ -17,7 +17,7 @@ package dev.project516.sandbox.screen;
 //         stage.setWidth(400);
 //         stage.setHeight(300);
 //
-//         Label titleLabel = new Label("Instance Window Opened!");
+//         Label titleLabel = new Label("Instance Window");
 //
 //         VBox root = new VBox(10, titleLabel);
 //
