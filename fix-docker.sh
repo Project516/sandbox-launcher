@@ -1,4 +1,5 @@
 #!/bin/sh
+# script to fix docker window issues on linux
 
 xhost +local:
 

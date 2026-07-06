@@ -12,7 +12,10 @@ import java.util.function.Consumer;
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
-    public static Process launchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
+    public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
+
+        String osName = System.getProperty("os.name").toLowerCase();
+
         try {
             String mcVersion = instance.mcVersion();
             String home = System.getProperty("user.home");
@@ -40,32 +43,30 @@ public class SandboxManager {
 
             logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
 
-            List<String> command = new ArrayList<>(List.of(
-                    "docker",
-                    "run",
-                    "--rm",
-                    "-e",
-                    "DISPLAY=:0",
-                    "-e",
-                    "XDG_RUNTIME_DIR=/run/user/1000",
-                    "-e",
-                    "PULSE_SERVER=unix:/run/user/1000/pulse/native",
-                    "-e",
-                    "LIBGL_ALWAYS_SOFTWARE=1",
-                    "--add-host",
-                    "s3.amazonaws.com:127.0.0.1",
-                    "-v",
-                    "/tmp/.X11-unix:/tmp/.X11-unix",
-                    "-v",
-                    "/run/user/1000:/run/user/1000",
-                    "--device",
-                    "/dev/dri",
-                    "--device",
-                    "/dev/snd",
-                    "-v",
-                    instanceDir + ":/app",
-                    javaImage,
-                    "java"));
+            List<String> command = new ArrayList<>(List.of("docker", "run", "--rm"));
+
+            if (osName.contains("linux")) {
+                command.addAll(List.of(
+                        "-e",
+                        "DISPLAY=:0",
+                        "-e",
+                        "XDG_RUNTIME_DIR=/run/user/1000",
+                        "-e",
+                        "PULSE_SERVER=unix:/run/user/1000/pulse/native",
+                        "-e",
+                        "LIBGL_ALWAYS_SOFTWARE=1",
+                        "-v",
+                        "/tmp/.X11-unix:/tmp/.X11-unix",
+                        "-v",
+                        "/run/user/1000:/run/user/1000",
+                        "--device",
+                        "/dev/dri",
+                        "--device",
+                        "/dev/snd"));
+            }
+
+            command.addAll(List.of(
+                    "--add-host", "s3.amazonaws.com:127.0.0.1", "-v", instanceDir + ":/app", javaImage, "java"));
 
             if (!javaImage.equals("sandbox-java8")) {
                 command.add("--enable-native-access=ALL-UNNAMED");

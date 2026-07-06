@@ -29,6 +29,8 @@ import javafx.stage.Stage;
 /** Home Menu **/
 public class HomeController {
 
+    String osName = System.getProperty("os.name").toLowerCase();
+
     @FXML
     public Button settingsButton;
 
@@ -104,6 +106,15 @@ public class HomeController {
             return;
         }
 
+        if (!osName.contains("linux") && !isXServerRunning(osName)) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("X Server Not Running!");
+            alert.setHeaderText("X Server is not running!");
+            alert.setContentText("Please download X Server to launch!");
+            alert.showAndWait();
+            return;
+        }
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("console.fxml"));
             VBox root = loader.load();
@@ -116,11 +127,12 @@ public class HomeController {
             consoleStage.show();
 
             new Thread(() -> {
-                        Process proc =
-                                SandboxManager.launchInstanceInDocker(selected, consoleController.getOutputConsumer());
+                        Process proc = SandboxManager.linuxLaunchInstanceInDocker(
+                                selected, consoleController.getOutputConsumer());
                         Platform.runLater(() -> consoleController.setProcess(proc));
                     })
                     .start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -395,4 +407,22 @@ public class HomeController {
     //         e.printStackTrace();
     //     }
     // }
+
+    private boolean isXServerRunning(String osName) {
+
+        if (osName.contains("win")) {
+            return ProcessHandle.allProcesses().anyMatch(process -> {
+                String command = process.info().command().orElse("").toLowerCase();
+                return command.contains("vcxsrv");
+            });
+
+        } else if (osName.contains("mac")) {
+            return ProcessHandle.allProcesses().anyMatch(process -> {
+                String command = process.info().command().orElse("").toLowerCase();
+                return command.contains("xquartz") || command.contains("x11");
+            });
+        } else {
+            return false;
+        }
+    }
 }

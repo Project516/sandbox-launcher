@@ -10,7 +10,7 @@ Currently the features are:
 * Change instance name and icon
 * Change your player username
 
-More features will be added in the future. 
+More features will be added in the future.
 
 There may be bugs!
 
