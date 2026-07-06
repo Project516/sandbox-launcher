@@ -154,7 +154,9 @@ public class DownloadManager {
                     while (entries.hasMoreElements()) {
                         java.util.jar.JarEntry entry = entries.nextElement();
                         if (entry.getName().endsWith(".so")) {
-                            Path outFile = normalizedNativesDir.resolve(entry.getName()).normalize();
+                            Path outFile = normalizedNativesDir
+                                    .resolve(entry.getName())
+                                    .normalize();
                             if (!outFile.startsWith(normalizedNativesDir)) {
                                 System.err.println("[DOWNLOADS] Skipping suspicious native entry: " + entry.getName());
                                 continue;
