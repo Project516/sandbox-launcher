@@ -198,17 +198,25 @@ public class HomeController {
                     DownloadManager.downloadFile(selectedVersion.url(), dest);
 
                     Platform.runLater(() -> statusLabel.setText("Downloading client JAR..."));
-                    DownloadManager.downloadClientJar(dest, selectedVersion.id());
+                    DownloadManager.downloadClientJar(dest, selectedVersion.id(), progress -> {
+                        Platform.runLater(() -> {
+                            progressBar.setProgress(progress);
+                        });
+                    });
 
                     Platform.runLater(() -> statusLabel.setText("Downloading libraries..."));
-                    DownloadManager.downloadLibraries(dest);
+                    DownloadManager.downloadLibraries(dest, progress -> {
+                        Platform.runLater(() -> progressBar.setProgress(progress));
+                    });
                     DownloadManager.extractNatives(dest, selectedVersion.id());
 
                     try {
                         VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);
 
                         Platform.runLater(() -> statusLabel.setText("Downloading assets (this may take a bit)..."));
-                        DownloadManager.downloadAssets(info);
+                        DownloadManager.downloadAssets(info, progress -> {
+                            Platform.runLater(() -> progressBar.setProgress(progress));
+                        });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

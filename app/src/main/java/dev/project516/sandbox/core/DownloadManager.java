@@ -17,8 +17,11 @@ public class DownloadManager {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
-    /** General Download file method **/
     public static void downloadFile(String fileUrl, Path destination) {
+        downloadFile(fileUrl, destination, progress -> {});
+    }
+    /** General Download file method **/
+    public static void downloadFile(String fileUrl, Path destination, java.util.function.Consumer<Double> onProgress) {
         try {
             if (destination.getParent() != null) {
                 Files.createDirectories(destination.getParent());
@@ -29,9 +32,27 @@ public class DownloadManager {
 
             System.out.println("[DOWNLOAD] Fetching " + fileUrl + "...");
 
-            HttpResponse<Path> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofFile(destination));
+            HttpResponse<java.io.InputStream> response =
+                    HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             if (response.statusCode() == 200) {
+
+                long totalBytes =
+                        response.headers().firstValueAsLong("Content-Length").orElse(1L);
+                long downloadedBytes = 0;
+
+                try (java.io.InputStream inputStream = response.body();
+                        java.io.OutputStream outputStream = Files.newOutputStream(destination)) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                        downloadedBytes = downloadedBytes + bytesRead;
+                        double progress = (double) downloadedBytes / totalBytes;
+                        onProgress.accept(progress);
+                    }
+                }
                 System.out.println("[DOWNLOAD] Saved to " + destination);
             } else {
                 System.err.println("[DOWNLOAD] Failed. HTTP Code: " + response.statusCode());
@@ -43,7 +64,9 @@ public class DownloadManager {
     }
 
     /** Download Minecraft client Jar**/
-    public static void downloadClientJar(Path versionJsonPath, String mcVersion) {
+    public static void downloadClientJar(
+            Path versionJsonPath, String mcVersion, java.util.function.Consumer<Double> onProgress) {
+
         try {
             VersionInfo info = MAPPER.readValue(versionJsonPath.toFile(), VersionInfo.class);
 
@@ -57,7 +80,8 @@ public class DownloadManager {
 
             Path jarPath = versionJsonPath.getParent().resolve(mcVersion + ".jar");
 
-            downloadFile(clientUrl, jarPath);
+            downloadFile(clientUrl, jarPath, onProgress);
+
         } catch (Exception e) {
             System.err.println("[DOWNLOAD] Failed to parse version JSON.");
             e.printStackTrace();
@@ -65,12 +89,15 @@ public class DownloadManager {
     }
 
     /** Download required libraries for Minecraft **/
-    public static void downloadLibraries(Path versionJsonPath) {
+    public static void downloadLibraries(Path versionJsonPath, java.util.function.Consumer<Double> onProgress) {
         try {
             VersionInfo info = MAPPER.readValue(versionJsonPath.toFile(), VersionInfo.class);
             if (info.libraries() == null) return;
 
             Path libBaseDir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "libraries");
+
+            int totalLibraries = info.libraries().size();
+            int completedLibraries = 0;
 
             for (Library lib : info.libraries()) {
                 if (lib.downloads() == null || lib.downloads().artifact() == null) continue;
@@ -78,7 +105,13 @@ public class DownloadManager {
                 Artifact artifact = lib.downloads().artifact();
                 Path libPath = libBaseDir.resolve(artifact.path());
 
-                downloadFile(artifact.url(), libPath);
+                if (!Files.exists(libPath)) {
+                    downloadFile(artifact.url(), libPath);
+                }
+
+                completedLibraries++;
+                double progress = (double) completedLibraries / totalLibraries;
+                onProgress.accept(progress);
             }
 
             System.out.println("[DOWNLOAD] All libraries fetched.");
@@ -89,7 +122,7 @@ public class DownloadManager {
     }
 
     /** Downloads assets required for Minecraft**/
-    public static void downloadAssets(VersionInfo info) {
+    public static void downloadAssets(VersionInfo info, java.util.function.Consumer<Double> onProgress) {
         if (info.assetIndex() == null) {
             System.err.println("[DOWNLOAD] No asset index found in version JSON.");
             return;
@@ -106,7 +139,10 @@ public class DownloadManager {
             AssetObjects assetObjects = MAPPER.readValue(indexPath.toFile(), AssetObjects.class);
             if (assetObjects.objects() == null) return;
 
-            System.out.println("[DOWNLOAD] Found " + assetObjects.objects().size() + " assets to download.");
+            int totalAssets = assetObjects.objects().size();
+            System.out.println("[DOWNLOAD] Found " + totalAssets + " assets to download.");
+
+            int completedAssets = 0;
 
             for (Map.Entry<String, AssetObject> entry : assetObjects.objects().entrySet()) {
                 AssetObject asset = entry.getValue();
@@ -119,6 +155,10 @@ public class DownloadManager {
                     String assetUrl = "https://resources.download.minecraft.net/" + subDir + "/" + hash;
                     downloadFile(assetUrl, assetPath);
                 }
+
+                completedAssets++;
+                double progress = (double) completedAssets / totalAssets;
+                onProgress.accept(progress);
             }
             System.out.println("[DOWNLOAD] All assets fetched.");
 
