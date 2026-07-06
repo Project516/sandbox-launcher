@@ -411,21 +411,18 @@ public class HomeController {
     private boolean isXServerRunning(String osName) {
 
         if (osName.contains("win")) {
-            return ProcessHandle.allProcesses()
-                    .anyMatch(process -> {
-                        String command = process.info().command().orElse("").toLowerCase();
-                        return command.contains("vcxsrv");
-                    });
+            return ProcessHandle.allProcesses().anyMatch(process -> {
+                String command = process.info().command().orElse("").toLowerCase();
+                return command.contains("vcxsrv");
+            });
 
         } else if (osName.contains("mac")) {
-            return ProcessHandle.allProcesses()
-                    .anyMatch(process -> {
-                        String command = process.info().command().orElse("").toLowerCase();
-                        return command.contains("xquartz") || command.contains("x11");
-                    });
+            return ProcessHandle.allProcesses().anyMatch(process -> {
+                String command = process.info().command().orElse("").toLowerCase();
+                return command.contains("xquartz") || command.contains("x11");
+            });
         } else {
             return false;
         }
     }
-
 }
