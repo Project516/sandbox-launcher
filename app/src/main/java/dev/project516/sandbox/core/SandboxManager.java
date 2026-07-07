@@ -15,9 +15,11 @@ public class SandboxManager {
     public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
 
         String osName = System.getProperty("os.name").toLowerCase();
+        String mcVersion = null;
+        String assetIndexId = mcVersion;
 
         try {
-            String mcVersion = instance.mcVersion();
+            mcVersion = instance.mcVersion();
             String home = System.getProperty("user.home");
             String instanceDir = home + "/.sandbox-launcher";
             String jarPath = "/app/versions/" + mcVersion + "/" + mcVersion + ".jar";
@@ -38,6 +40,10 @@ public class SandboxManager {
                         String libPath = lib.downloads().artifact().path();
                         jarPaths.add("/app/libraries/" + libPath);
                     }
+                }
+
+                if (info != null && info.assetIndex() != null) {
+                    assetIndexId = info.assetIndex().id();
                 }
             } else {
                 logConsumer.accept("[DOCKER] WARNING: Could not find version JSON at " + versionJsonPath);
@@ -140,6 +146,8 @@ public class SandboxManager {
                         "/app/instances/" + mcVersion,
                         "--assetsDir",
                         "/app/assets",
+                        "--assetIndex",
+                        assetIndexId,
                         "--username",
                         PlayerManager.getUsername()));
             }
