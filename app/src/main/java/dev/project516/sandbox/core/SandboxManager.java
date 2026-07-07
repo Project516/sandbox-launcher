@@ -71,11 +71,12 @@ public class SandboxManager {
                         "--device",
                         "/dev/dri",
                         "--device",
-                        "/dev/snd"));
+                        "/dev/snd",
+                        "-v",
+                        "/dev/input:/dev/input"));
             }
 
-            command.addAll(List.of(
-                    "--add-host", "s3.amazonaws.com:127.0.0.1", "-v", instanceDir + ":/app", javaImage, "java"));
+            command.addAll(List.of("-v", instanceDir + ":/app", javaImage, "java"));
 
             if (!javaImage.equals("sandbox-java8")) {
                 command.add("--enable-native-access=ALL-UNNAMED");
@@ -115,16 +116,16 @@ public class SandboxManager {
             if (isOldVersion) {
                 command.addAll(List.of(
                         "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
+                        "-Dhttp.proxyHost=betacraft.uk", // betacraft proxy for 1.0.0-rc1 to 1.5.2 :
+                        // https://betacraft.uk/blog/post/how-to-use-betacraft-proxy
+                        "-Dhttp.proxyPort=11702",
+                        "-Dminecraft.applet.TargetDirectory=/app/instances/" + mcVersion,
                         "-cp",
                         classpath,
                         "net.minecraft.client.Minecraft",
                         PlayerManager.getUsername(),
                         "-token",
-                        "0",
-                        "--gameDir",
-                        "/app/instances/" + mcVersion,
-                        "--assetsDir",
-                        "/app/assets"));
+                        "0"));
             } else {
                 command.addAll(List.of(
                         "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
