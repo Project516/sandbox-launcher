@@ -25,13 +25,22 @@ public class SandboxManager {
             Path localLibDir = Path.of(home, ".sandbox-launcher", "libraries");
             List<String> jarPaths = new ArrayList<>();
 
-            if (Files.exists(localLibDir)) {
-                Files.walk(localLibDir)
-                        .filter(p -> p.toString().endsWith(".jar"))
-                        .forEach(p -> {
-                            String dockerPath = p.toString().replace(instanceDir, "/app");
-                            jarPaths.add(dockerPath);
-                        });
+            Path versionJsonPath = Path.of(home, ".sandbox-launcher", "versions", mcVersion, mcVersion + ".json");
+
+            if (Files.exists(versionJsonPath)) {
+                dev.project516.sandbox.model.mojang.VersionInfo info = DownloadManager.MAPPER.readValue(
+                        versionJsonPath.toFile(), dev.project516.sandbox.model.mojang.VersionInfo.class);
+
+                if (info.libraries() != null) {
+                    for (dev.project516.sandbox.model.mojang.Library lib : info.libraries()) {
+                        if (lib.downloads() == null || lib.downloads().artifact() == null) continue;
+
+                        String libPath = lib.downloads().artifact().path();
+                        jarPaths.add("/app/libraries/" + libPath);
+                    }
+                }
+            } else {
+                logConsumer.accept("[DOCKER] WARNING: Could not find version JSON at " + versionJsonPath);
             }
 
             String classpath = jarPath + ":" + String.join(":", jarPaths);

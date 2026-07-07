@@ -2,6 +2,8 @@
 
 A JavaFX Minecraft launcher that launches Minecraft in a sandbox environment.
 
+![screenshot](assets/screenshot.png)
+
 This uses docker for isolated environments.
 
 Currently the features are:
