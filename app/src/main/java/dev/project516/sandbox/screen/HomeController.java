@@ -92,6 +92,7 @@ public class HomeController {
                     System.err.println("Failed to fetch versions!");
                     return null;
                 });
+        launchButton.setDisable(false);
     }
 
     @FXML
@@ -106,6 +107,7 @@ public class HomeController {
             return;
         }
 
+        // needs x server to launch
         if (!osName.contains("linux") && !isXServerRunning(osName)) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("X Server Not Running!");
