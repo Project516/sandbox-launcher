@@ -1,56 +1,104 @@
 package dev.project516.sandbox.core;
 
-// import com.fasterxml.jackson.databind.ObjectMapper;
-// import dev.project516.sandbox.model.fabric.FabricLibrary;
-// import dev.project516.sandbox.model.fabric.FabricVersionInfo;
-// import java.net.URI;
-// import java.net.http.HttpClient;
-// import java.net.http.HttpRequest;
-// import java.net.http.HttpResponse;
-// import java.nio.file.Path;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.project516.sandbox.model.Instance;
+import dev.project516.sandbox.model.ModdedProfile;
+import dev.project516.sandbox.model.fabric.FabricLibrary;
+import dev.project516.sandbox.model.fabric.FabricVersionInfo;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
-// public class FabricManager {
-//     private static final String FABRIC_API = "https://meta.fabricmc.net/v2/versions/loader/";
-//     private static final ObjectMapper MAPPER = new ObjectMapper();
-//     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-//
-//     public static FabricVersionInfo fetchLatestLoader(String mcVersion) {
-//         try {
-//             HttpRequest request = HttpRequest.newBuilder()
-//                     .uri(URI.create(FABRIC_API + mcVersion))
-//                     .build();
-//
-//             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//             FabricVersionInfo[] versions = MAPPER.readValue(response.body(), FabricVersionInfo[].class);
-//             if (versions.length > 0) {
-//                 return versions[0];
-//             }
-//         } catch (Exception e) {
-//             e.printStackTrace();
-//         }
-//         return null;
-//     }
-//
-//     public static void downloadFabricLibraries(FabricVersionInfo info) {
-//         if (info == null || info.launcherMeta() == null || info.launcherMeta().libraries() == null) return;
-//
-//         Path libBaseDir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "libraries");
-//
-//         for (FabricLibrary lib : info.launcherMeta().libraries()) {
-//             String[] parts = lib.name().split(":");
-//             String groupPath = parts[0].replace('.', '/');
-//             String artifactId = parts[1];
-//             String version = parts[2];
-//
-//             String mavenPath = groupPath + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version +
-// ".jar";
-//             Path localPath = libBaseDir.resolve(mavenPath);
-//
-//             String fullUrl = lib.url() + mavenPath;
-//             DownloadManager.downloadFile(fullUrl, localPath);
-//         }
-//
-//         System.out.println("[FABRIC] All Fabric libraries fetched.");
-//     }
-// }
+public class FabricManager {
+    private static final String FABRIC_META = "https://meta.fabricmc.net/v2/versions/loader/";
+    private static final String MAVEN_BASE = "https://maven.fabricmc.net/";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+
+    public static FabricVersionInfo fetchLatestLoader(String mcVersion) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(FABRIC_META + mcVersion))
+                    .build();
+
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            FabricVersionInfo[] versions = MAPPER.readValue(response.body(), FabricVersionInfo[].class);
+            return versions.length > 0 ? versions[0] : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static void install(Instance instance, Consumer<Double> progress) {
+        String mc = instance.mcVersion();
+        FabricVersionInfo info = fetchLatestLoader(mc);
+        if (info == null || info.launcherMeta() == null) {
+            throw new RuntimeException("No Fabric loader available for " + mc);
+        }
+
+        Path libBase = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "libraries");
+        List<String> extraClasspath = new ArrayList<>();
+
+        List<FabricLibrary> libs = new ArrayList<>();
+        if (info.launcherMeta().libraries() != null) {
+            if (info.launcherMeta().libraries().client() != null) {
+                libs.addAll(info.launcherMeta().libraries().client());
+            }
+            if (info.launcherMeta().libraries().common() != null) {
+                libs.addAll(info.launcherMeta().libraries().common());
+            }
+        }
+
+        libs.add(new FabricLibrary("net.fabricmc:fabric-loader:" + info.loader().version(), MAVEN_BASE, null, 0));
+        libs.add(new FabricLibrary(
+                "net.fabricmc:intermediary:" + info.intermediary().version(), MAVEN_BASE, null, 0));
+
+        int total = libs.size();
+        int done = 0;
+        for (FabricLibrary lib : libs) {
+            String mavenPath = mavenPathOf(lib.name());
+            Path local = libBase.resolve(mavenPath);
+            if (!Files.exists(local)) {
+                DownloadManager.downloadFile(lib.url() + mavenPath, local);
+            }
+            extraClasspath.add("libraries/" + mavenPath);
+
+            done++;
+            if (progress != null) progress.accept((double) done / total);
+        }
+
+        String mainClass = info.launcherMeta().mainClass() != null
+                ? info.launcherMeta().mainClass().getOrDefault("client", "net.fabricmc.loader.launch.knot.Client")
+                : "net.fabricmc.loader.launch.knot.Client";
+        writeProfile(instance, mainClass, extraClasspath);
+        System.out.println("[FABRIC] Installed loader " + info.loader().version() + " for " + mc);
+    }
+
+    static String mavenPathOf(String coords) {
+        String[] parts = coords.split(":");
+        String group = parts[0].replace('.', '/');
+        String artifact = parts[1];
+        String version = parts[2];
+        return group + "/" + artifact + "/" + version + "/" + artifact + "-" + version + ".jar";
+    }
+
+    static void writeProfile(Instance instance, String mainClass, List<String> cp) {
+        try {
+            Path dir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "version", instance.mcVersion());
+            Files.createDirectories(dir);
+            Path out = dir.resolve(instance.mcVersion() + "-fabric.json");
+            ModdedProfile profile = new ModdedProfile("fabric", instance.mcVersion(), mainClass, cp);
+            Files.writeString(
+                    out, DownloadManager.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

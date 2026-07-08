@@ -3,4 +3,4 @@ package dev.project516.sandbox.model.fabric;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record FabricLibrary(String name, String url, String sha1, int size) {}
+public record FabricComponent(String version, boolean stable) {}
