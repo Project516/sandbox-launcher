@@ -19,7 +19,8 @@ public class MojangManager {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
-    public static VersionManifest loadLocalManifest() {
+    /** see if version manifest exists locally **/
+    public static VersionManifest loadLocalManifest() { // we save it locally to speed up selecting an instance so we don't have to redownload each time
         try {
             if (Files.exists(MANIFEST_FILE)) {
                 return MAPPER.readValue(MANIFEST_FILE.toFile(), VersionManifest.class);
@@ -30,6 +31,7 @@ public class MojangManager {
         return null;
     }
 
+    /** Download version manifest **/
     public static CompletableFuture<VersionManifest> fetchVersionManifest() {
         HttpRequest request =
                 HttpRequest.newBuilder().uri(URI.create(MANIFEST_URL)).build();

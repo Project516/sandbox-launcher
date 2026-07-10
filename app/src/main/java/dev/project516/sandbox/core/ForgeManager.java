@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/** Forge modloader **/
 public class ForgeManager {
     private static final String PROMOTIONS =
             "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
@@ -23,6 +24,7 @@ public class ForgeManager {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
+    /** Get latest version of Forge for selected Minecraft version **/
     public static String latestVersion(String mcVersion) throws Exception {
         HttpRequest req = HttpRequest.newBuilder().uri(URI.create(PROMOTIONS)).build();
         HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
@@ -34,6 +36,7 @@ public class ForgeManager {
         return node.asText();
     }
 
+    /** Install Forge modloader to selected Minecraft version **/
     public static void install(Instance instance, Consumer<Double> progress) throws Exception {
         String mc = instance.mcVersion();
         String forgeVer = latestVersion(mc);

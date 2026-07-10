@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
+/** Instance console **/
 public class ConsoleController {
 
     @FXML

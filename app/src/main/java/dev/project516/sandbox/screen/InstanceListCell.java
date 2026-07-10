@@ -10,6 +10,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+/** Instance layout **/
 public class InstanceListCell extends ListCell<Instance> {
     private final ImageView iconView = new ImageView();
     private final Label nameLabel = new Label();

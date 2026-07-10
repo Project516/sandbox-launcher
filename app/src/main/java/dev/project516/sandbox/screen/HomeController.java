@@ -146,6 +146,7 @@ public class HomeController {
         }
     }
 
+    /** Download Instance **/
     private void downloadInstance(Instance instance, String versionUrl) {
         Label statusLabel = new Label("Starting download...");
         ProgressBar progressBar = new ProgressBar();
@@ -239,6 +240,7 @@ public class HomeController {
         InstanceManager.saveInstances(instanceListView.getItems());
     }
 
+    // @FXML ?
     public void onSettingsClick() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("settings.fxml"));
@@ -254,6 +256,7 @@ public class HomeController {
         }
     }
 
+    // @FXML ?
     public void onRenameClick() {
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -324,7 +327,6 @@ public class HomeController {
         }
     }
 
-    // TODO
     @FXML
     public void onEditClick() {
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
@@ -360,6 +362,7 @@ public class HomeController {
         }
     }
 
+    /** Detect if xserver is running (needed to launch the game) **/
     private boolean isXServerRunning(String osName) {
 
         if (osName.contains("win")) {

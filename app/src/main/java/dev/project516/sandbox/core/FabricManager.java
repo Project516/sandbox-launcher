@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/** Managing Fabric modloader **/
 public class FabricManager {
     private static final String FABRIC_META = "https://meta.fabricmc.net/v2/versions/loader/";
     private static final String MAVEN_BASE = "https://maven.fabricmc.net/";
@@ -37,6 +38,7 @@ public class FabricManager {
         }
     }
 
+    /** Install fabric **/
     public static void install(Instance instance, Consumer<Double> progress) {
         String mc = instance.mcVersion();
         FabricVersionInfo info = fetchLatestLoader(mc);

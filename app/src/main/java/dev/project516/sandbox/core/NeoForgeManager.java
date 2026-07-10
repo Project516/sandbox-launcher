@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class NeoForgeManager {
+/** NeoForge modloader manager **/
+public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
     private static final String MAVEN_METADATA =
             "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml";
     private static final String MAVEN = "https://maven.neoforged.net/releases/net/neoforged/neoforge/";
