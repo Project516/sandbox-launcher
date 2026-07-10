@@ -62,6 +62,11 @@ public class NeoForgeManager {
         }
 
         Path mcRoot = Path.of(System.getProperty("user.home"), ".sandbox-launcher");
+        Path profilesJson = mcRoot.resolve("launcher_profiles.json");
+        if (!Files.exists(profilesJson)) {
+            Files.writeString(profilesJson, "{\"profiles\":{}, \"selectedProfile\": \"(Default)\"}");
+        }
+
         List<String> cmd = List.of(
                 "java",
                 "-jar",

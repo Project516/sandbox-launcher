@@ -3,10 +3,7 @@ package dev.project516.sandbox.screen;
 import dev.project516.sandbox.core.*;
 import dev.project516.sandbox.core.ModLoaderManager;
 import dev.project516.sandbox.model.Instance;
-import dev.project516.sandbox.model.fabric.FabricVersionInfo;
-import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionInfo;
-import dev.project516.sandbox.model.mojang.VersionManifest;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,16 +36,6 @@ public class HomeController {
     @FXML
     public Button renameButton;
 
-    // TODO
-    @FXML
-    public Button fabricButton;
-
-    @FXML
-    public Button forgeButton;
-
-    @FXML
-    public Button neoforgeButton;
-
     private boolean isDownloading = false;
 
     @FXML
@@ -67,9 +54,6 @@ public class HomeController {
     private Button deleteTestButton;
 
     @FXML
-    private ComboBox<Version> versionComboBox;
-
-    @FXML
     private void initialize() {
         List<Instance> loadedInstances = InstanceManager.loadInstances();
         ObservableList<Instance> observableInstances = FXCollections.observableList(loadedInstances);
@@ -77,29 +61,6 @@ public class HomeController {
 
         instanceListView.setCellFactory(listView -> new InstanceListCell());
 
-        VersionManifest localManifest = MojangManager.loadLocalManifest();
-        if (localManifest != null) {
-            List<Version> releaseOnly = localManifest.versions().stream()
-                    .filter(v -> v.type().equalsIgnoreCase("release"))
-                    .toList();
-            versionComboBox.getItems().addAll(releaseOnly);
-        }
-
-        MojangManager.fetchVersionManifest()
-                .thenAccept(manifest -> {
-                    if (manifest != null) {
-                        Platform.runLater(() -> {
-                            List<Version> releasesOnly = manifest.versions().stream()
-                                    .filter(version -> version.type().equalsIgnoreCase("release"))
-                                    .toList();
-                            versionComboBox.getItems().setAll(releasesOnly);
-                        });
-                    }
-                })
-                .exceptionally(e -> {
-                    System.err.println("Failed to fetch versions!");
-                    return null;
-                });
         launchButton.setDisable(false);
     }
 
@@ -157,31 +118,35 @@ public class HomeController {
     @FXML
     private void onAddClick() {
         if (isDownloading) return;
-        isDownloading = true;
-        launchButton.setDisable(true);
-        addTestButton.setDisable(true);
 
-        Version selectedVersion = versionComboBox.getSelectionModel().getSelectedItem();
-        if (selectedVersion == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Selection");
-            alert.setHeaderText("No Version Selected!");
-            alert.setContentText("Please select a Version");
-            alert.showAndWait();
-            return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("new_instance.fxml"));
+            VBox root = loader.load();
+            NewInstanceController controller = loader.getController();
+
+            Stage stage = new Stage();
+            stage.setTitle("New Instance");
+            stage.setScene(new Scene(root));
+            controller.setStage(stage);
+            stage.initModality(Modality.APPLICATION_MODAL);
+
+            controller.setOnCreateCallback((newInstance, versionUrl) -> {
+                isDownloading = true;
+                launchButton.setDisable(true);
+                addTestButton.setDisable(true);
+
+                instanceListView.getItems().add(newInstance);
+                InstanceManager.saveInstances(instanceListView.getItems());
+                downloadInstance(newInstance, versionUrl);
+            });
+
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
 
-        TextInputDialog dialog = new TextInputDialog("New Instance");
-        dialog.setTitle("New Instance");
-        dialog.setHeaderText("Creating instance for " + selectedVersion.id());
-        dialog.setContentText("Enter instance name:");
-        Optional<String> result = dialog.showAndWait();
-        String name = result.filter(s -> !s.trim().isEmpty()).orElse("New Instance");
-
-        Instance newInstance = new Instance(name, selectedVersion.id());
-        instanceListView.getItems().add(newInstance);
-        InstanceManager.saveInstances(instanceListView.getItems());
-
+    private void downloadInstance(Instance instance, String versionUrl) {
         Label statusLabel = new Label("Starting download...");
         ProgressBar progressBar = new ProgressBar();
         progressBar.setProgress(-1.0);
@@ -191,7 +156,7 @@ public class HomeController {
         popupVBox.setPadding(new Insets(20));
 
         Stage popupStage = new Stage();
-        popupStage.setTitle("Downloading " + name);
+        popupStage.setTitle("Downloading " + instance.name());
         popupStage.setScene(new Scene(popupVBox, 300, 100));
         popupStage.initModality(Modality.APPLICATION_MODAL);
         popupStage.show();
@@ -201,24 +166,22 @@ public class HomeController {
                             System.getProperty("user.home"),
                             ".sandbox-launcher",
                             "versions",
-                            selectedVersion.id(),
-                            selectedVersion.id() + ".json");
+                            instance.mcVersion(),
+                            instance.mcVersion() + ".json");
 
                     Platform.runLater(() -> statusLabel.setText("Fetching version JSON..."));
-                    DownloadManager.downloadFile(selectedVersion.url(), dest);
+                    DownloadManager.downloadFile(versionUrl, dest);
 
                     Platform.runLater(() -> statusLabel.setText("Downloading client JAR..."));
-                    DownloadManager.downloadClientJar(dest, selectedVersion.id(), progress -> {
-                        Platform.runLater(() -> {
-                            progressBar.setProgress(progress);
-                        });
+                    DownloadManager.downloadClientJar(dest, instance.mcVersion(), progress -> {
+                        Platform.runLater(() -> progressBar.setProgress(progress));
                     });
 
                     Platform.runLater(() -> statusLabel.setText("Downloading libraries..."));
                     DownloadManager.downloadLibraries(dest, progress -> {
                         Platform.runLater(() -> progressBar.setProgress(progress));
                     });
-                    DownloadManager.extractNatives(dest, selectedVersion.id());
+                    DownloadManager.extractNatives(dest, instance.mcVersion());
 
                     try {
                         VersionInfo info = DownloadManager.MAPPER.readValue(dest.toFile(), VersionInfo.class);
@@ -230,12 +193,28 @@ public class HomeController {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+
+                    if (!instance.modLoader().equalsIgnoreCase("vanilla")) {
+                        Platform.runLater(() -> statusLabel.setText("Installing " + instance.modLoader() + "..."));
+                        try {
+                            ModLoaderManager.install(instance, progress -> {
+                                Platform.runLater(() -> progressBar.setProgress(progress));
+                            });
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Platform.runLater(() -> new Alert(
+                                            Alert.AlertType.ERROR,
+                                            "Failed to install " + instance.modLoader() + ":\n" + e.getMessage())
+                                    .showAndWait());
+                        }
+                    }
+
                     Platform.runLater(() -> {
                         isDownloading = false;
                         launchButton.setDisable(false);
                         addTestButton.setDisable(false);
                         popupStage.close();
-                        System.out.println("[UI] Download complete!");
+                        System.out.println("[UI] Download Complete");
                     });
                 })
                 .start();
@@ -300,7 +279,6 @@ public class HomeController {
                 Instance renamed = new Instance(newName.trim(), selected.mcVersion());
 
                 instanceListView.getItems().set(index, renamed);
-
                 InstanceManager.saveInstances(instanceListView.getItems());
             }
         });
@@ -348,50 +326,6 @@ public class HomeController {
 
     // TODO
     @FXML
-    public void onInstallFabricClick() {
-        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Selection");
-            alert.setHeaderText("No Instance Selected!");
-            alert.setContentText("Please select an instance to install Fabric!");
-            alert.showAndWait();
-            return;
-        }
-        fabricButton.setDisable(true);
-
-        new Thread(() -> {
-                    try {
-                        System.out.println("[FABRIC] Fetching loader for " + selected.mcVersion());
-                        FabricVersionInfo fabricInfo = FabricManager.fetchLatestLoader(selected.mcVersion());
-
-                        if (fabricInfo != null) {
-                            Platform.runLater(() -> System.out.println("[FABRIC] Downloading Fabric libraries..."));
-                            // FabricManager.downloadFabricLibraries(fabricInfo);
-
-                            int index = instanceListView.getItems().indexOf(selected);
-                            Instance fabricInstance =
-                                    new Instance(selected.name(), selected.mcVersion(), selected.iconPath(), "fabric");
-
-                            Platform.runLater(() -> {
-                                instanceListView.getItems().set(index, fabricInstance);
-                                InstanceManager.saveInstances(instanceListView.getItems());
-                                System.out.println("[FABRIC] Installation complete!");
-                            });
-                        } else {
-                            System.err.println("[FABRIC] Could not find a loader for this version!");
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        Platform.runLater(() -> fabricButton.setDisable(false));
-                    }
-                })
-                .start();
-    }
-
-    // TODO
-    @FXML
     public void onEditClick() {
         Instance selected = instanceListView.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -424,47 +358,6 @@ public class HomeController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @FXML
-    public void onInstallLoaderClick(javafx.event.ActionEvent event) {
-        Button src = (Button) event.getSource();
-        String loader =
-                switch (src.getId()) {
-                    case "fabricButton" -> "fabric";
-                    case "forgeButton" -> "forge";
-                    case "neoforgeButton" -> "neoforge";
-                    default -> "vanilla";
-                };
-
-        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            new Alert(Alert.AlertType.WARNING, "Please select an instance first.").showAndWait();
-            return;
-        }
-
-        src.setDisable(true);
-        new Thread(() -> {
-                    try {
-                        Instance target =
-                                new Instance(selected.name(), selected.mcVersion(), selected.iconPath(), loader);
-                        ModLoaderManager.install(target, p -> {});
-
-                        int idx = instanceListView.getItems().indexOf(selected);
-                        javafx.application.Platform.runLater(() -> {
-                            instanceListView.getItems().set(idx, target);
-                            InstanceManager.saveInstances(instanceListView.getItems());
-                            new Alert(Alert.AlertType.INFORMATION, loader + " installed successfully!").showAndWait();
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        javafx.application.Platform.runLater(
-                                () -> new Alert(Alert.AlertType.ERROR, "Failed: " + e.getMessage()).showAndWait());
-                    } finally {
-                        javafx.application.Platform.runLater(() -> src.setDisable(false));
-                    }
-                })
-                .start();
     }
 
     private boolean isXServerRunning(String osName) {

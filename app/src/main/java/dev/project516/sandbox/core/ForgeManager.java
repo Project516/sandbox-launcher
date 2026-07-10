@@ -38,7 +38,7 @@ public class ForgeManager {
         String mc = instance.mcVersion();
         String forgeVer = latestVersion(mc);
 
-        String installerName = mc + "-" + forgeVer + "-installer.jar";
+        String installerName = "forge-" + mc + "-" + forgeVer + "-installer.jar";
         String installerUrl = MAVEN + mc + "-" + forgeVer + "/" + installerName;
 
         Path libBase = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "libraries");
@@ -53,6 +53,10 @@ public class ForgeManager {
         }
 
         Path mcRoot = Path.of(System.getProperty("user.home"), ".sandbox-launcher");
+        Path profilesJson = mcRoot.resolve("launcher_profiles.json");
+        if (!Files.exists(profilesJson)) {
+            Files.writeString(profilesJson, "{\"profiles\":{}, \"selectedProfile\": \"(Default)\"}");
+        }
         List<String> cmd = List.of(
                 "java",
                 "-jar",
