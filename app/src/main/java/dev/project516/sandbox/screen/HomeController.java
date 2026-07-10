@@ -1,8 +1,9 @@
 package dev.project516.sandbox.screen;
 
 import dev.project516.sandbox.core.*;
+import dev.project516.sandbox.core.ModLoaderManager;
 import dev.project516.sandbox.model.Instance;
-// import dev.project516.sandbox.model.fabric.FabricVersionInfo;
+import dev.project516.sandbox.model.fabric.FabricVersionInfo;
 import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionInfo;
 import dev.project516.sandbox.model.mojang.VersionManifest;
@@ -21,6 +22,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -38,8 +40,14 @@ public class HomeController {
     public Button renameButton;
 
     // TODO
-    // @FXML
-    // public Button fabricButton;
+    @FXML
+    public Button fabricButton;
+
+    @FXML
+    public Button forgeButton;
+
+    @FXML
+    public Button neoforgeButton;
 
     private boolean isDownloading = false;
 
@@ -339,84 +347,125 @@ public class HomeController {
     }
 
     // TODO
-    // @FXML
-    // public void onInstallFabricClick() {
-    //     Instance selected = instanceListView.getSelectionModel().getSelectedItem();
-    //     if (selected == null) {
-    //         Alert alert = new Alert(Alert.AlertType.WARNING);
-    //         alert.setTitle("No Selection");
-    //         alert.setHeaderText("No Instance Selected!");
-    //         alert.setContentText("Please select an instance to install Fabric!");
-    //         alert.showAndWait();
-    //         return;
-    //     }
-    //     fabricButton.setDisable(true);
-    //
-    //     new Thread(() -> {
-    //                 try {
-    //                     System.out.println("[FABRIC] Fetching loader for " + selected.mcVersion());
-    //                     FabricVersionInfo fabricInfo = FabricManager.fetchLatestLoader(selected.mcVersion());
-    //
-    //                     if (fabricInfo != null) {
-    //                         Platform.runLater(() -> System.out.println("[FABRIC] Downloading Fabric libraries..."));
-    //                         FabricManager.downloadFabricLibraries(fabricInfo);
-    //
-    //                         int index = instanceListView.getItems().indexOf(selected);
-    //                         Instance fabricInstance =
-    //                                 new Instance(selected.name(), selected.mcVersion(), selected.iconPath(),
-    // "fabric");
-    //
-    //                         Platform.runLater(() -> {
-    //                             instanceListView.getItems().set(index, fabricInstance);
-    //                             InstanceManager.saveInstances(instanceListView.getItems());
-    //                             System.out.println("[FABRIC] Installation complete!");
-    //                         });
-    //                     } else {
-    //                         System.err.println("[FABRIC] Could not find a loader for this version!");
-    //                     }
-    //                 } catch (Exception e) {
-    //                     e.printStackTrace();
-    //                 } finally {
-    //                     Platform.runLater(() -> fabricButton.setDisable(false));
-    //                 }
-    //             })
-    //             .start();
-    // }
+    @FXML
+    public void onInstallFabricClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to install Fabric!");
+            alert.showAndWait();
+            return;
+        }
+        fabricButton.setDisable(true);
+
+        new Thread(() -> {
+                    try {
+                        System.out.println("[FABRIC] Fetching loader for " + selected.mcVersion());
+                        FabricVersionInfo fabricInfo = FabricManager.fetchLatestLoader(selected.mcVersion());
+
+                        if (fabricInfo != null) {
+                            Platform.runLater(() -> System.out.println("[FABRIC] Downloading Fabric libraries..."));
+                            // FabricManager.downloadFabricLibraries(fabricInfo);
+
+                            int index = instanceListView.getItems().indexOf(selected);
+                            Instance fabricInstance =
+                                    new Instance(selected.name(), selected.mcVersion(), selected.iconPath(), "fabric");
+
+                            Platform.runLater(() -> {
+                                instanceListView.getItems().set(index, fabricInstance);
+                                InstanceManager.saveInstances(instanceListView.getItems());
+                                System.out.println("[FABRIC] Installation complete!");
+                            });
+                        } else {
+                            System.err.println("[FABRIC] Could not find a loader for this version!");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        Platform.runLater(() -> fabricButton.setDisable(false));
+                    }
+                })
+                .start();
+    }
 
     // TODO
-    // public void onEditClick() {
-    //     Instance selected = instanceListView.getSelectionModel().getSelectedItem();
-    //     if (selected == null) {
-    //         Alert alert = new Alert(Alert.AlertType.WARNING);
-    //         alert.setTitle("No Selection");
-    //         alert.setHeaderText("No Instance Selected!");
-    //         alert.setContentText("Please select an instance to edit!");
-    //         alert.showAndWait();
-    //         return;
-    //     }
-    //
-    //     try {
-    //         FXMLLoader loader = new FXMLLoader(getClass().getResource("instance_settings.fxml"));
-    //         VBox root = loader.load();
-    //         InstanceSettingsController settingsController = loader.getController();
-    //
-    //         Stage stage = new Stage();
-    //         stage.setTitle("Settings - " + selected.name());
-    //         settingsController.setStage(stage);
-    //         settingsController.setInstance(selected);
-    //
-    //         settingsController.setOnSaveCallback(updateInstance -> {
-    //             int index = instanceListView.getItems().indexOf(selected);
-    //             instanceListView.getItems().set(index, updateInstance);
-    //             InstanceManager.saveInstances(instanceListView.getItems());
-    //         });
-    //
-    //         stage.initModality(Modality.APPLICATION_MODAL);
-    //         stage.showAndWait();
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //     }
-    // }
+    @FXML
+    public void onEditClick() {
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Selection");
+            alert.setHeaderText("No Instance Selected!");
+            alert.setContentText("Please select an instance to edit!");
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("instance_settings.fxml"));
+            VBox root = loader.load();
+            InstanceSettingsController settingsController = loader.getController();
+
+            Stage stage = new Stage();
+            stage.setTitle("Settings - " + selected.name());
+            settingsController.setStage(stage);
+            settingsController.setInstance(selected);
+
+            settingsController.setOnSaveCallback(updateInstance -> {
+                int index = instanceListView.getItems().indexOf(selected);
+                instanceListView.getItems().set(index, updateInstance);
+                InstanceManager.saveInstances(instanceListView.getItems());
+            });
+
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void onInstallLoaderClick(javafx.event.ActionEvent event) {
+        Button src = (Button) event.getSource();
+        String loader =
+                switch (src.getId()) {
+                    case "fabricButton" -> "fabric";
+                    case "forgeButton" -> "forge";
+                    case "neoforgeButton" -> "neoforge";
+                    default -> "vanilla";
+                };
+
+        Instance selected = instanceListView.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Please select an instance first.").showAndWait();
+            return;
+        }
+
+        src.setDisable(true);
+        new Thread(() -> {
+                    try {
+                        Instance target =
+                                new Instance(selected.name(), selected.mcVersion(), selected.iconPath(), loader);
+                        ModLoaderManager.install(target, p -> {});
+
+                        int idx = instanceListView.getItems().indexOf(selected);
+                        javafx.application.Platform.runLater(() -> {
+                            instanceListView.getItems().set(idx, target);
+                            InstanceManager.saveInstances(instanceListView.getItems());
+                            new Alert(Alert.AlertType.INFORMATION, loader + " installed successfully!").showAndWait();
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        javafx.application.Platform.runLater(
+                                () -> new Alert(Alert.AlertType.ERROR, "Failed: " + e.getMessage()).showAndWait());
+                    } finally {
+                        javafx.application.Platform.runLater(() -> src.setDisable(false));
+                    }
+                })
+                .start();
+    }
 
     private boolean isXServerRunning(String osName) {
 

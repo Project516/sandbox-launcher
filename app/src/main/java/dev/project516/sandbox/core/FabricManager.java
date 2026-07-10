@@ -1,5 +1,6 @@
 package dev.project516.sandbox.core;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.ModdedProfile;
@@ -74,9 +75,15 @@ public class FabricManager {
             if (progress != null) progress.accept((double) done / total);
         }
 
-        String mainClass = info.launcherMeta().mainClass() != null
-                ? info.launcherMeta().mainClass().getOrDefault("client", "net.fabricmc.loader.launch.knot.Client")
-                : "net.fabricmc.loader.launch.knot.Client";
+        String mainClass = "net.fabricmc.loader.launch.knot.Client";
+        if (info.launcherMeta().mainClass() != null) {
+            JsonNode mcNode = info.launcherMeta().mainClass();
+            if (mcNode.isTextual()) {
+                mainClass = mcNode.asText();
+            } else if (mcNode.isObject() && mcNode.has("client")) {
+                mainClass = mcNode.get("client").asText();
+            }
+        }
         writeProfile(instance, mainClass, extraClasspath);
         System.out.println("[FABRIC] Installed loader " + info.loader().version() + " for " + mc);
     }

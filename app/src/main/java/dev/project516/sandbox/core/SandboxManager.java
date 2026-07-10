@@ -1,6 +1,8 @@
 package dev.project516.sandbox.core;
 
 import dev.project516.sandbox.model.Instance;
+import dev.project516.sandbox.model.ModdedProfile;
+import dev.project516.sandbox.model.mojang.VersionInfo;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -13,36 +15,30 @@ import java.util.function.Consumer;
 public class SandboxManager {
 
     public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
-
         String osName = System.getProperty("os.name").toLowerCase();
-        String mcVersion = null;
+        String mcVersion = instance.mcVersion();
         String assetIndexId = mcVersion;
 
         try {
-            mcVersion = instance.mcVersion();
             String home = System.getProperty("user.home");
             String instanceDir = home + "/.sandbox-launcher";
             String jarPath = "/app/versions/" + mcVersion + "/" + mcVersion + ".jar";
 
-            Path localLibDir = Path.of(home, ".sandbox-launcher", "libraries");
             List<String> jarPaths = new ArrayList<>();
-
             Path versionJsonPath = Path.of(home, ".sandbox-launcher", "versions", mcVersion, mcVersion + ".json");
 
             if (Files.exists(versionJsonPath)) {
-                dev.project516.sandbox.model.mojang.VersionInfo info = DownloadManager.MAPPER.readValue(
-                        versionJsonPath.toFile(), dev.project516.sandbox.model.mojang.VersionInfo.class);
+                VersionInfo info = DownloadManager.MAPPER.readValue(versionJsonPath.toFile(), VersionInfo.class);
 
                 if (info.libraries() != null) {
                     for (dev.project516.sandbox.model.mojang.Library lib : info.libraries()) {
                         if (lib.downloads() == null || lib.downloads().artifact() == null) continue;
-
                         String libPath = lib.downloads().artifact().path();
                         jarPaths.add("/app/libraries/" + libPath);
                     }
                 }
 
-                if (info != null && info.assetIndex() != null) {
+                if (info.assetIndex() != null) {
                     assetIndexId = info.assetIndex().id();
                 }
             } else {
@@ -53,40 +49,7 @@ public class SandboxManager {
             String javaImage = getJavaImageForVersion(mcVersion);
 
             Path localJarPath = Path.of(home, ".sandbox-launcher", "versions", mcVersion, mcVersion + ".jar");
-            logConsumer.accept("[DEBUG Local JAR exists: " + Files.exists(localJarPath) + " (" + localJarPath + ")");
-            logConsumer.accept("[DEBUG] Classpath: " + classpath);
-
-            logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
-
-            List<String> command = new ArrayList<>(List.of("docker", "run", "--rm"));
-
-            if (osName.contains("linux")) {
-                command.addAll(List.of(
-                        "-e",
-                        "DISPLAY=:0",
-                        "-e",
-                        "XDG_RUNTIME_DIR=/run/user/1000",
-                        "-e",
-                        "PULSE_SERVER=unix:/run/user/1000/pulse/native",
-                        "-e",
-                        "LIBGL_ALWAYS_SOFTWARE=1",
-                        "-v",
-                        "/tmp/.X11-unix:/tmp/.X11-unix",
-                        "-v",
-                        "/run/user/1000:/run/user/1000",
-                        "--device",
-                        "/dev/dri",
-                        "--device",
-                        "/dev/snd",
-                        "-v",
-                        "/dev/input:/dev/input"));
-            }
-
-            command.addAll(List.of("-v", instanceDir + ":/app", javaImage, "java"));
-
-            if (!javaImage.equals("sandbox-java8")) {
-                command.add("--enable-native-access=ALL-UNNAMED");
-            }
+            logConsumer.accept("[DEBUG] Local JAR exists: " + Files.exists(localJarPath) + " (" + localJarPath + ")");
 
             boolean isOldVersion = false;
             try {
@@ -101,43 +64,65 @@ public class SandboxManager {
             } catch (Exception ignored) {
             }
 
-            // if (instance.modLoader().equalsIgnoreCase("fabric")) {
-            //     logConsumer.accept("[DEBUG] Launching with Fabric Mod Loader!");
-            //     command.addAll(List.of(
-            //             "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
-            //             "-cp",
-            //             classpath,
-            //             "net.fabricmc.loader.launch.knot.Client",
-            //             "--username",
-            //             PlayerManager.getUsername(),
-            //             "--version",
-            //             mcVersion,
-            //             "--gameDir",
-            //             "/app/instances/" + mcVersion,
-            //             "--assetsDir",
-            //             "/app/assets",
-            //             "--accessToken",
-            //             "0"));
-            // } else
+            ModdedProfile modded = loadModdedProfile(mcVersion);
+            String mainClass;
+            List<String> extraCp = List.of();
+
+            if (modded != null) {
+                mainClass = modded.mainClass();
+                extraCp = modded.classpath();
+                logConsumer.accept("[DOCKER] Using mod loader " + modded.loader() + " mainClass=" + mainClass);
+            } else if (isOldVersion) {
+                mainClass = "net.minecraft.client.Minecraft";
+            } else {
+                mainClass = "net.minecraft.client.main.Main";
+            }
+
+            if (!extraCp.isEmpty()) {
+                classpath = classpath + ":" + String.join(":", extraCp);
+            }
+
+            logConsumer.accept("[DEBUG] Classpath: " + classpath);
+            logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
+
+            List<String> command = new ArrayList<>(List.of("docker", "run", "--rm"));
+
+            if (osName.contains("linux")) {
+                command.addAll(List.of(
+                        "-e", "DISPLAY=:0",
+                        "-e", "XDG_RUNTIME_DIR=/run/user/1000",
+                        "-e", "PULSE_SERVER=unix:/run/user/1000/pulse/native",
+                        "-e", "LIBGL_ALWAYS_SOFTWARE=1",
+                        "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
+                        "-v", "/run/user/1000:/run/user/1000",
+                        "--device", "/dev/dri",
+                        "--device", "/dev/snd",
+                        "-v", "/dev/input:/dev/input"));
+            }
+
+            command.addAll(List.of("-v", instanceDir + ":/app", javaImage, "java"));
+
+            if (!javaImage.equals("sandbox-java8")) {
+                command.add("--enable-native-access=ALL-UNNAMED");
+            }
+
+            // Common JVM arguments
+            command.add("-Djava.library.path=/app/versions/" + mcVersion + "/natives");
+            command.add("-cp");
+            command.add(classpath);
+
             if (isOldVersion) {
                 command.addAll(List.of(
-                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
-                        "-Dhttp.proxyHost=betacraft.uk", // betacraft proxy for 1.0.0-rc1 to 1.5.2 :
-                        // https://betacraft.uk/blog/post/how-to-use-betacraft-proxy
+                        "-Dhttp.proxyHost=betacraft.uk",
                         "-Dhttp.proxyPort=11702",
                         "-Dminecraft.applet.TargetDirectory=/app/instances/" + mcVersion,
-                        "-cp",
-                        classpath,
-                        "net.minecraft.client.Minecraft",
+                        mainClass,
                         PlayerManager.getUsername(),
                         "-token",
                         "0"));
             } else {
                 command.addAll(List.of(
-                        "-Djava.library.path=/app/versions/" + mcVersion + "/natives",
-                        "-cp",
-                        classpath,
-                        "net.minecraft.client.main.Main",
+                        mainClass,
                         "--version",
                         mcVersion,
                         "--accessToken",
@@ -216,5 +201,23 @@ public class SandboxManager {
         }
         System.out.println("[DOCKER] Using Java 25.");
         return "sandbox-java25";
+    }
+
+    private static ModdedProfile loadModdedProfile(String mcVersion) {
+        try {
+            for (String loader : new String[] {"fabric", "forge", "neoforge"}) {
+                Path cand = Path.of(
+                        System.getProperty("user.home"),
+                        ".sandbox-launcher",
+                        "versions",
+                        mcVersion,
+                        mcVersion + "-" + loader + ".json");
+                if (Files.exists(cand)) {
+                    return DownloadManager.MAPPER.readValue(cand.toFile(), ModdedProfile.class);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }
