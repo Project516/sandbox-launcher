@@ -107,9 +107,8 @@ public class NewInstanceController {
 
                     try {
                         neoForgeSupported = NeoForgeManager.latestVersion(mcVersion) != null;
-                    } catch (Exception Ignored) {
+                    } catch (Exception ignored) {
                     }
-                    ;
 
                     List<String> supported = new ArrayList<>();
                     supported.add("vanilla");

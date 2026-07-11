@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-/** Settings meny **/
+/** Settings menu **/
 public class SettingsController {
 
     @FXML
