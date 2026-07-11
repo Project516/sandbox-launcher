@@ -6,10 +6,7 @@ import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.ModdedProfile;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,10 +23,12 @@ public class ForgeManager {
 
     /** Get latest version of Forge for selected Minecraft version **/
     public static String latestVersion(String mcVersion) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder().uri(URI.create(PROMOTIONS)).build();
-        HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode root = MAPPER.readTree(resp.body());
+        Path cacheFile =
+                Path.of(System.getProperty("user.home"), ".sandbox-launcher", "cache", "forge_promotions.json");
+        String body = DownloadManager.fetchTextWithCache(PROMOTIONS, cacheFile);
+        if (body == null) throw new RuntimeException("Failed to fetch Forge metadata");
 
+        JsonNode root = MAPPER.readTree(body);
         JsonNode node = root.path("promos").path(mcVersion + "-latest");
         if (node.isMissingNode()) node = root.path("promos").path(mcVersion + "-recommended");
         if (node.isMissingNode()) throw new RuntimeException("No Forge build for " + mcVersion);

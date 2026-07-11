@@ -6,10 +6,7 @@ import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.ModdedProfile;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -27,11 +24,10 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     public static String latestVersion(String mcVersion) throws Exception {
-        HttpRequest req =
-                HttpRequest.newBuilder().uri(URI.create(MAVEN_METADATA)).build();
-        HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-
-        String body = resp.body();
+        Path cacheFile =
+                Path.of(System.getProperty("user.home"), ".sandbox-launcher", "cache", "neoforge_metadata.xml");
+        String body = DownloadManager.fetchTextWithCache(MAVEN_METADATA, cacheFile);
+        if (body == null) throw new RuntimeException("Failed to fetch NeoForge metadata");
 
         List<String> versions = new ArrayList<>();
         Pattern p = Pattern.compile("<version>([^<]+)</version>");
@@ -63,13 +59,6 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
             throw new RuntimeException("Could not parse NeoForge maven-metadata.xml");
         }
         return latest;
-    }
-
-    private static String extractTag(String xml, String tag) {
-        int s = xml.indexOf("<" + tag + ">");
-        int e = xml.indexOf("</" + tag + ">");
-        if (s < 0 && e < 0) return null;
-        return xml.substring(s + tag.length() + 2, e).trim();
     }
 
     public static void install(Instance instance, Consumer<Double> progress) throws Exception {
@@ -113,14 +102,22 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
         int code = proc.waitFor();
         if (code != 0) throw new RuntimeException("NeoForge installer exited with " + code);
 
-        String versionId = "neoforge-" + mc + "-" + nfVer;
-        Path versionDir = mcRoot.resolve("versions").resolve(versionId);
-        Path versionJson = versionDir.resolve(versionId + ".json");
-        if (!Files.exists(versionJson)) {
-            throw new RuntimeException("Neoforge installer did not produce " + versionJson);
+        Path versionDir = mcRoot.resolve("versions");
+        Path foundVersionJson = null;
+        if (Files.exists(versionDir)) {
+            try (var stream = Files.walk(versionDir)) {
+                foundVersionJson = stream.filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".json"))
+                        .filter(path -> path.getFileName().toString().contains(nfVer))
+                        .findFirst()
+                        .orElse(null);
+            }
+        }
+        if (foundVersionJson == null) {
+            throw new RuntimeException("NeoForge installer did not produce a version JSON for " + nfVer);
         }
 
-        JsonNode vj = MAPPER.readTree(Files.readString(versionJson));
+        JsonNode vj = MAPPER.readTree(Files.readString(foundVersionJson));
         String mainClass = vj.path("mainClass").asText("cpw.mods.modlauncher.Launcher");
         List<String> cp = new ArrayList<>();
         for (JsonNode lib : vj.path("libraries")) {

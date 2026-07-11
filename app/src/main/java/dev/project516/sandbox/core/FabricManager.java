@@ -6,10 +6,7 @@ import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.ModdedProfile;
 import dev.project516.sandbox.model.fabric.FabricLibrary;
 import dev.project516.sandbox.model.fabric.FabricVersionInfo;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,12 +22,15 @@ public class FabricManager {
 
     public static FabricVersionInfo fetchLatestLoader(String mcVersion) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(FABRIC_META + mcVersion))
-                    .build();
+            Path cacheFile = Path.of(
+                    System.getProperty("user.home"),
+                    ".sandbox-launcher",
+                    "cache",
+                    "fabric_loader_" + mcVersion + ".json");
+            String body = DownloadManager.fetchTextWithCache(FABRIC_META + mcVersion, cacheFile);
+            if (body != null) return null;
 
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-            FabricVersionInfo[] versions = MAPPER.readValue(response.body(), FabricVersionInfo[].class);
+            FabricVersionInfo[] versions = MAPPER.readValue(body, FabricVersionInfo[].class);
             return versions.length > 0 ? versions[0] : null;
         } catch (Exception e) {
             e.printStackTrace();

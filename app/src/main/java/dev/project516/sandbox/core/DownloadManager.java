@@ -215,4 +215,27 @@ public class DownloadManager {
             e.printStackTrace();
         }
     }
+
+    public static String fetchTextWithCache(String url, Path cachePath) {
+        try {
+            if (Files.exists(cachePath)) {
+                return Files.readString(cachePath);
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                String body = response.body();
+                Files.createDirectories(cachePath.getParent());
+                Files.writeString(cachePath, body);
+                return body;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
