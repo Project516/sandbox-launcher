@@ -20,7 +20,9 @@ public class MojangManager {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     /** see if version manifest exists locally **/
-    public static VersionManifest loadLocalManifest() { // we save it locally to speed up selecting an instance so we don't have to redownload each time
+    public static VersionManifest
+            loadLocalManifest() { // we save it locally to speed up selecting an instance so we don't have to redownload
+        // each time
         try {
             if (Files.exists(MANIFEST_FILE)) {
                 return MAPPER.readValue(MANIFEST_FILE.toFile(), VersionManifest.class);

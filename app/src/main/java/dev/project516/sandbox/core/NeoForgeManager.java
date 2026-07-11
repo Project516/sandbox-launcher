@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** NeoForge modloader manager **/
 public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
@@ -30,7 +32,33 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
         HttpResponse<String> resp = HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
 
         String body = resp.body();
-        String latest = extractTag(body, "latest");
+
+        List<String> versions = new ArrayList<>();
+        Pattern p = Pattern.compile("<version>([^<]+)</version>");
+        Matcher m = p.matcher(body);
+        while (m.find()) {
+            versions.add(m.group(1));
+        }
+
+        String mcPrefix = mcVersion;
+        if (mcVersion.startsWith("1.")) {
+            String[] parts = mcVersion.split("\\.");
+            if (parts.length >= 3) {
+                mcPrefix = parts[1] + "." + parts[2]; // 1.20.4 -> 20.4
+            } else if (parts.length == 2) {
+                mcPrefix = parts[1]; // 1.20 -> 20
+            }
+        }
+
+        String latest = null;
+        for (String v : versions) {
+            if (v.startsWith(mcPrefix)) {
+                if (latest == null || v.compareTo(latest) > 0) {
+                    latest = v;
+                }
+            }
+        }
+
         if (latest == null) {
             throw new RuntimeException("Could not parse NeoForge maven-metadata.xml");
         }

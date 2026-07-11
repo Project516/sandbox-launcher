@@ -1,9 +1,13 @@
 package dev.project516.sandbox.screen;
 
+import dev.project516.sandbox.core.FabricManager;
+import dev.project516.sandbox.core.ForgeManager;
 import dev.project516.sandbox.core.MojangManager;
+import dev.project516.sandbox.core.NeoForgeManager;
 import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.mojang.Version;
 import dev.project516.sandbox.model.mojang.VersionManifest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import javafx.collections.FXCollections;
@@ -42,8 +46,16 @@ public class NewInstanceController {
 
     @FXML
     private void initialize() {
-        modLoaderCombo.setItems(FXCollections.observableArrayList("vanilla", "fabric", "forge", "neoforge"));
+
+        modLoaderCombo.setDisable(true);
+        modLoaderCombo.setItems(FXCollections.observableArrayList("vanilla"));
         modLoaderCombo.setValue("vanilla");
+
+        versionComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                checkLoaderSupport(newVal.id());
+            }
+        });
 
         VersionManifest localManifest = MojangManager.loadLocalManifest();
         if (localManifest != null) {
@@ -71,6 +83,47 @@ public class NewInstanceController {
                     e.printStackTrace();
                     return null;
                 });
+    }
+
+    private void checkLoaderSupport(String mcVersion) {
+        modLoaderCombo.setDisable(true);
+        modLoaderCombo.setItems(FXCollections.observableArrayList("vanilla"));
+        modLoaderCombo.setValue("vanilla");
+
+        new Thread(() -> {
+                    boolean fabricSupported = false;
+                    boolean forgeSupported = false;
+                    boolean neoForgeSupported = false;
+
+                    try {
+                        fabricSupported = FabricManager.fetchLatestLoader(mcVersion) != null;
+                    } catch (Exception ignored) {
+                    }
+
+                    try {
+                        forgeSupported = ForgeManager.latestVersion(mcVersion) != null;
+                    } catch (Exception ignored) {
+                    }
+
+                    try {
+                        neoForgeSupported = NeoForgeManager.latestVersion(mcVersion) != null;
+                    } catch (Exception Ignored) {
+                    }
+                    ;
+
+                    List<String> supported = new ArrayList<>();
+                    supported.add("vanilla");
+                    if (fabricSupported) supported.add("fabric");
+                    if (forgeSupported) supported.add("forge");
+                    if (neoForgeSupported) supported.add("neoforge");
+
+                    javafx.application.Platform.runLater(() -> {
+                        modLoaderCombo.setItems(FXCollections.observableArrayList(supported));
+                        modLoaderCombo.setValue("vanilla");
+                        modLoaderCombo.setDisable(false);
+                    });
+                })
+                .start();
     }
 
     @FXML
