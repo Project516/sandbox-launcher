@@ -6,7 +6,6 @@ import dev.project516.sandbox.model.Instance;
 import dev.project516.sandbox.model.ModdedProfile;
 import dev.project516.sandbox.model.fabric.FabricLibrary;
 import dev.project516.sandbox.model.fabric.FabricVersionInfo;
-import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,23 +17,38 @@ public class FabricManager {
     private static final String FABRIC_META = "https://meta.fabricmc.net/v2/versions/loader/";
     private static final String MAVEN_BASE = "https://maven.fabricmc.net/";
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     public static FabricVersionInfo fetchLatestLoader(String mcVersion) {
-        try {
-            Path cacheFile = Path.of(
-                    System.getProperty("user.home"),
-                    ".sandbox-launcher",
-                    "cache",
-                    "fabric_loader_" + mcVersion + ".json");
-            String body = DownloadManager.fetchTextWithCache(FABRIC_META + mcVersion, cacheFile);
-            if (body != null) return null;
+        Path cacheFile = Path.of(
+                System.getProperty("user.home"), ".sandbox-launcher", "cache", "fabric_loader_" + mcVersion + ".json");
+        String body = DownloadManager.fetchTextWithCache(FABRIC_META + mcVersion, cacheFile, true);
 
+        if (body == null) {
+            System.err.println("[FABRIC] Failed to fetch loader metadata for " + mcVersion);
+            return null;
+        }
+
+        try {
             FabricVersionInfo[] versions = MAPPER.readValue(body, FabricVersionInfo[].class);
+            if (versions.length == 0) {
+                System.out.println("[FABRIC] API returned empty array for " + mcVersion);
+            }
             return versions.length > 0 ? versions[0] : null;
         } catch (Exception e) {
+            System.err.println("[FABRIC] Failed to parse cached JSON. Deleting cache and retrying...");
             e.printStackTrace();
-            return null;
+
+            try {
+                Files.deleteIfExists(cacheFile);
+                String freshBody = DownloadManager.fetchTextWithCache(FABRIC_META + mcVersion, cacheFile, false);
+                if (freshBody == null) return null;
+
+                FabricVersionInfo[] versions = MAPPER.readValue(freshBody, FabricVersionInfo[].class);
+                return versions.length > 0 ? versions[0] : null;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return null;
+            }
         }
     }
 

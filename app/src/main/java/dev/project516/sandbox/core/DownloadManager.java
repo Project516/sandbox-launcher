@@ -216,10 +216,29 @@ public class DownloadManager {
         }
     }
 
-    public static String fetchTextWithCache(String url, Path cachePath) {
+    public static String fetchTextWithCache(String url, Path cachePath, boolean backgroundRefresh) {
         try {
             if (Files.exists(cachePath)) {
-                return Files.readString(cachePath);
+                String cacheBody = Files.readString(cachePath);
+
+                if (backgroundRefresh) {
+                    new Thread(() -> {
+                                try {
+                                    HttpRequest request = HttpRequest.newBuilder()
+                                            .uri(URI.create(url))
+                                            .build();
+                                    HttpResponse<String> response =
+                                            HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+                                    if (response.statusCode() == 200) {
+                                        Files.writeString(cachePath, response.body());
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            })
+                            .start();
+                }
+
+                return cacheBody;
             }
         } catch (Exception ignored) {
         }

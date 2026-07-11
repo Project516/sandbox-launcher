@@ -25,7 +25,7 @@ public class ForgeManager {
     public static String latestVersion(String mcVersion) throws Exception {
         Path cacheFile =
                 Path.of(System.getProperty("user.home"), ".sandbox-launcher", "cache", "forge_promotions.json");
-        String body = DownloadManager.fetchTextWithCache(PROMOTIONS, cacheFile);
+        String body = DownloadManager.fetchTextWithCache(PROMOTIONS, cacheFile, true);
         if (body == null) throw new RuntimeException("Failed to fetch Forge metadata");
 
         JsonNode root = MAPPER.readTree(body);

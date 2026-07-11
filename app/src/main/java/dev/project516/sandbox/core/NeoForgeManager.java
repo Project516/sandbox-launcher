@@ -24,9 +24,23 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     public static String latestVersion(String mcVersion) throws Exception {
+
+        if (mcVersion.startsWith("1.")) {
+            String[] mcParts = mcVersion.split("\\.");
+            if (mcParts.length >= 2) {
+                try {
+                    int minor = Integer.parseInt(mcParts[1]);
+                    if (minor < 20) {
+                        throw new RuntimeException("NeoForge does not support MC " + mcVersion);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
         Path cacheFile =
                 Path.of(System.getProperty("user.home"), ".sandbox-launcher", "cache", "neoforge_metadata.xml");
-        String body = DownloadManager.fetchTextWithCache(MAVEN_METADATA, cacheFile);
+        String body = DownloadManager.fetchTextWithCache(MAVEN_METADATA, cacheFile, true);
         if (body == null) throw new RuntimeException("Failed to fetch NeoForge metadata");
 
         List<String> versions = new ArrayList<>();
@@ -40,9 +54,9 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
         if (mcVersion.startsWith("1.")) {
             String[] parts = mcVersion.split("\\.");
             if (parts.length >= 3) {
-                mcPrefix = parts[1] + "." + parts[2]; // 1.20.4 -> 20.4
+                mcPrefix = parts[1] + "." + parts[2];
             } else if (parts.length == 2) {
-                mcPrefix = parts[1]; // 1.20 -> 20
+                mcPrefix = parts[1];
             }
         }
 
