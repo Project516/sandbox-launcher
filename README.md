@@ -18,7 +18,11 @@ There may be bugs!
 
 ## Setup
 
-**Make sure you have Java 25 and Docker installed!**
+**Make sure you have Java 25 and [Docker](https://www.docker.com/) installed!**
+
+Also Linux is the only supported OS for now. Windows and Mac support may be added, and it may be possible to use a xserver alternative to get this to work now, but it has not been tested.
+
+I recommend using [Eclipse Temurin](https://adoptium.net/temurin/releases?version=25&os=any&arch=any). For Docker, you do not need [Docker Desktop](https://docs.docker.com/desktop/). [Docker Engine](https://docs.docker.com/engine/) is all that is needed.
 
 Currently the way to setup and use this is to:
 
