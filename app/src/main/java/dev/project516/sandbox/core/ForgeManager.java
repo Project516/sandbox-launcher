@@ -118,22 +118,14 @@ public class ForgeManager {
             }
         }
 
-        List<String> extraArgs = new ArrayList<>();
-        JsonNode args = vj.path("arguments").path("game");
-        if (args.isArray()) {
-            for (JsonNode arg : args) {
-                if (arg.isTextual()) {
-                    String argStr = arg.asText();
-                    if (argStr.startsWith("--launchTarget") || argStr.startsWith("--fml.")) {
-                        extraArgs.add(argStr);
-                    }
-                }
-            }
-        }
+        List<String> extraArgs =
+                ModLoaderManager.extractLoaderArgs(vj.path("arguments").path("game"));
+        List<String> jvmArgs =
+                ModLoaderManager.extractJvmArgs(vj.path("arguments").path("jvm"));
 
         Path profilePath = mcRoot.resolve("versions").resolve(mc).resolve(mc + "-forge.json");
         Files.createDirectories(profilePath.getParent());
-        ModdedProfile profile = new ModdedProfile("forge", mc, mainClass, cp, extraArgs);
+        ModdedProfile profile = new ModdedProfile("forge", mc, mainClass, cp, extraArgs, jvmArgs);
         Files.writeString(profilePath, MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
 
         if (progress != null) progress.accept(1.0);

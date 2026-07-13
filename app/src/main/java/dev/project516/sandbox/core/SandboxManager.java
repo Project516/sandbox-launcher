@@ -62,6 +62,8 @@ public class SandboxManager {
             String instanceDir = home + "/.sandbox-launcher";
             String jarPath = "/app/versions/" + mcVersion + "/" + mcVersion + ".jar";
 
+            Files.createDirectories(Path.of(home, ".sandbox-launcher", "instances", mcVersion));
+
             List<String> jarPaths = new ArrayList<>();
             Path versionJsonPath = Path.of(home, ".sandbox-launcher", "versions", mcVersion, mcVersion + ".json");
 
@@ -112,6 +114,9 @@ public class SandboxManager {
                 extraCp = modded.classpath();
                 extraArgs = modded.extraArgs() != null ? modded.extraArgs() : List.of();
                 logConsumer.accept("[DOCKER] Using mod loader " + modded.loader() + " mainClass=" + mainClass);
+                if (modded.loader().equals("forge") || modded.loader().equals("neoforge")) {
+                    disableEarlyWindow(mcVersion, logConsumer);
+                }
             } else if (isOldVersion) {
                 mainClass = "net.minecraft.client.Minecraft";
             } else {
@@ -138,17 +143,31 @@ public class SandboxManager {
             List<String> command = new ArrayList<>(List.of("docker", "run", "--rm"));
 
             if (osName.contains("linux")) {
+                String uid = idOf("-u");
+                String gid = idOf("-g");
+                String runtimeDir = "/run/user/" + uid;
+
+                command.add("--user");
+                command.add(uid + ":" + gid);
+                for (String groupId : deviceGroupIds()) {
+                    command.add("--group-add");
+                    command.add(groupId);
+                }
+
                 command.addAll(List.of(
                         "-e", "DISPLAY=:0",
-                        "-e", "XDG_RUNTIME_DIR=/run/user/1000",
-                        "-e", "PULSE_SERVER=unix:/run/user/1000/pulse/native",
+                        "-e", "XDG_RUNTIME_DIR=" + runtimeDir,
+                        "-e", "PULSE_SERVER=unix:" + runtimeDir + "/pulse/native",
                         "-e", "LIBGL_ALWAYS_SOFTWARE=1",
                         "-v", "/tmp/.X11-unix:/tmp/.X11-unix",
-                        "-v", "/run/user/1000:/run/user/1000",
+                        "-v", runtimeDir + ":" + runtimeDir,
                         "--device", "/dev/dri",
                         "--device", "/dev/snd",
                         "-v", "/dev/input:/dev/input"));
             }
+
+            command.add("-w");
+            command.add("/app/instances/" + mcVersion);
 
             command.addAll(List.of("-v", instanceDir + ":/app", javaImage, "java"));
 
@@ -161,6 +180,10 @@ public class SandboxManager {
             if (modded != null
                     && (modded.loader().equals("forge") || modded.loader().equals("neoforge"))) {
                 command.add("-DlibraryDirectory=/app/libraries");
+            }
+
+            if (modded != null && modded.jvmArgs() != null) {
+                command.addAll(modded.jvmArgs());
             }
 
             command.add("-cp");
@@ -267,6 +290,69 @@ public class SandboxManager {
             image = "sandbox-java25";
         }
         return GHCR_PREFIX + image;
+    }
+
+    private static String idOf(String flag) {
+        try {
+            Process p = new ProcessBuilder("id", flag).start();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line = r.readLine();
+                p.waitFor();
+                if (line != null && line.trim().matches("\\d+")) {
+                    return line.trim();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "1000";
+    }
+
+    private static List<String> deviceGroupIds() {
+        List<String> gids = new ArrayList<>();
+        try {
+            Process p = new ProcessBuilder(
+                            "sh", "-c", "stat -c %g /dev/dri/* /dev/snd/* /dev/input/* 2>/dev/null | sort -u")
+                    .start();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    line = line.trim();
+                    if (line.matches("\\d+") && !line.equals("0")) {
+                        gids.add(line);
+                    }
+                }
+            }
+            p.waitFor();
+        } catch (Exception ignored) {
+        }
+        return gids;
+    }
+
+    private static void disableEarlyWindow(String mcVersion, Consumer<String> logConsumer) {
+        Path fmlToml = Path.of(
+                System.getProperty("user.home"), ".sandbox-launcher", "instances", mcVersion, "config", "fml.toml");
+        try {
+            String body = "earlyWindowControl = false" + System.lineSeparator();
+            if (Files.exists(fmlToml)) {
+                String existing = Files.readString(fmlToml);
+                if (existing.contains("earlyWindowControl = false")) {
+                    return;
+                }
+                if (existing.matches("(?s).*earlyWindowControl\\s*=.*")) {
+                    body = existing.replaceAll("earlyWindowControl\\s*=\\s*\\S+", "earlyWindowControl = false");
+                } else {
+                    body = existing + System.lineSeparator() + body;
+                }
+            } else {
+                Files.createDirectories(fmlToml.getParent());
+            }
+            Files.writeString(fmlToml, body);
+            logConsumer.accept("[DOCKER] Disabled FML early loading window for Wayland compatibility");
+        } catch (Exception e) {
+            logConsumer.accept("[DOCKER] WARNING: could not write " + fmlToml
+                    + " (a previous root-owned run may own it). Delete that file or the instance, then relaunch. "
+                    + e.getMessage());
+        }
     }
 
     private static ModdedProfile loadModdedProfile(Instance instance) {

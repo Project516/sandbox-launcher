@@ -133,12 +133,12 @@ public class NewInstanceController {
             return;
         }
 
+        String loader = modLoaderCombo.getValue() != null ? modLoaderCombo.getValue() : "vanilla";
+
         String name = nameField.getText().trim();
         if (name.isEmpty()) {
-            name = selectedVersion.id() + "Instance";
+            name = selectedVersion.id() + " " + loader + " instance";
         }
-
-        String loader = modLoaderCombo.getValue() != null ? modLoaderCombo.getValue() : "vanilla";
 
         Instance newInstance = new Instance(name, selectedVersion.id(), null, loader);
         if (onCreateCallback != null) {

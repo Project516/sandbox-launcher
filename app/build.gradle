@@ -57,6 +57,10 @@ jar {
     }
 }
 
+shadowJar {
+    archiveFileName = 'app-all.jar'
+}
+
 run {
     standardInput = System.in
 }

@@ -157,22 +157,14 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
             }
         }
 
-        List<String> extraArgs = new ArrayList<>();
-        JsonNode args = vj.path("arguments").path("game");
-        if (args.isArray()) {
-            for (JsonNode arg : args) {
-                if (arg.isTextual()) {
-                    String argStr = arg.asText();
-                    if (argStr.startsWith("--launchTarget") || argStr.startsWith("--fml.")) {
-                        extraArgs.add(argStr);
-                    }
-                }
-            }
-        }
+        List<String> extraArgs =
+                ModLoaderManager.extractLoaderArgs(vj.path("arguments").path("game"));
+        List<String> jvmArgs =
+                ModLoaderManager.extractJvmArgs(vj.path("arguments").path("jvm"));
 
         Path profilePath = mcRoot.resolve("versions").resolve(mc).resolve(mc + "-neoforge.json");
         Files.createDirectories(profilePath.getParent());
-        ModdedProfile profile = new ModdedProfile("neoforge", mc, mainClass, cp, extraArgs);
+        ModdedProfile profile = new ModdedProfile("neoforge", mc, mainClass, cp, extraArgs, jvmArgs);
         Files.writeString(profilePath, MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
 
         if (progress != null) progress.accept(1.0);

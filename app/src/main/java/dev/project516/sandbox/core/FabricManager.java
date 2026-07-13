@@ -117,7 +117,8 @@ public class FabricManager {
             Path dir = Path.of(System.getProperty("user.home"), ".sandbox-launcher", "versions", instance.mcVersion());
             Files.createDirectories(dir);
             Path out = dir.resolve(instance.mcVersion() + "-fabric.json");
-            ModdedProfile profile = new ModdedProfile("fabric", instance.mcVersion(), mainClass, cp, List.of());
+            ModdedProfile profile =
+                    new ModdedProfile("fabric", instance.mcVersion(), mainClass, cp, List.of(), List.of());
             Files.writeString(
                     out, DownloadManager.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
         } catch (Exception e) {

@@ -279,7 +279,8 @@ public class HomeController {
             if (!newName.trim().isEmpty()) {
                 int index = instanceListView.getItems().indexOf(selected);
 
-                Instance renamed = new Instance(newName.trim(), selected.mcVersion());
+                Instance renamed =
+                        new Instance(newName.trim(), selected.mcVersion(), selected.iconPath(), selected.modLoader());
 
                 instanceListView.getItems().set(index, renamed);
                 InstanceManager.saveInstances(instanceListView.getItems());
@@ -317,7 +318,8 @@ public class HomeController {
                 Files.copy(selectedFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
 
                 int index = instanceListView.getItems().indexOf(selected);
-                Instance updatedInstance = new Instance(selected.name(), selected.mcVersion(), destPath.toString());
+                Instance updatedInstance =
+                        new Instance(selected.name(), selected.mcVersion(), destPath.toString(), selected.modLoader());
 
                 instanceListView.getItems().set(index, updatedInstance);
                 InstanceManager.saveInstances(instanceListView.getItems());
