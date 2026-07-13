@@ -14,6 +14,44 @@ import java.util.function.Consumer;
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
+    private static final String GHCR_PREFIX = "ghcr.io/project516/";
+
+    private static String ensureImageAvailable(String image, Consumer<String> logConsumer) throws Exception {
+        String localName = image.startsWith(GHCR_PREFIX) ? image.substring(GHCR_PREFIX.length()) : image;
+
+        ProcessBuilder check = new ProcessBuilder("docker", "image", "inspect", localName);
+        check.redirectErrorStream(true);
+        Process localCheck = check.start();
+        localCheck.waitFor();
+
+        if (localCheck.exitValue() == 0) {
+            return localName;
+        }
+
+        ProcessBuilder remoteCheck = new ProcessBuilder("docker", "image", "inspect", image);
+        remoteCheck.redirectErrorStream(true);
+        Process remoteCheckProcess = remoteCheck.start();
+        remoteCheckProcess.waitFor();
+
+        if (remoteCheckProcess.exitValue() == 0) {
+            return image;
+        }
+
+        logConsumer.accept("[DOCKER] Image " + localName + " not found locally. Pulling from GHCR...");
+        ProcessBuilder pull = new ProcessBuilder("docker", "pull", image);
+        pull.redirectErrorStream(true);
+        Process pullProcess = pull.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(pullProcess.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                logConsumer.accept("[DOCKER] " + line);
+            }
+        }
+        pullProcess.waitFor();
+        logConsumer.accept("[DOCKER] Pull complete for " + image);
+        return image;
+    }
+
     public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
         String osName = System.getProperty("os.name").toLowerCase();
         String mcVersion = instance.mcVersion();
@@ -64,13 +102,15 @@ public class SandboxManager {
             } catch (Exception ignored) {
             }
 
-            ModdedProfile modded = loadModdedProfile(mcVersion);
+            ModdedProfile modded = loadModdedProfile(instance);
             String mainClass;
             List<String> extraCp = List.of();
+            List<String> extraArgs = List.of();
 
             if (modded != null) {
                 mainClass = modded.mainClass();
                 extraCp = modded.classpath();
+                extraArgs = modded.extraArgs() != null ? modded.extraArgs() : List.of();
                 logConsumer.accept("[DOCKER] Using mod loader " + modded.loader() + " mainClass=" + mainClass);
             } else if (isOldVersion) {
                 mainClass = "net.minecraft.client.Minecraft";
@@ -79,11 +119,21 @@ public class SandboxManager {
             }
 
             if (!extraCp.isEmpty()) {
-                classpath = classpath + ":" + String.join(":", extraCp);
+                List<String> fixedCp = new ArrayList<>();
+                for (String cp : extraCp) {
+                    if (!cp.startsWith("/")) {
+                        fixedCp.add("/app/" + cp);
+                    } else {
+                        fixedCp.add(cp);
+                    }
+                }
+                classpath = classpath + ":" + String.join(":", fixedCp);
             }
 
             logConsumer.accept("[DEBUG] Classpath: " + classpath);
             logConsumer.accept("[DOCKER] Launching with image: " + javaImage);
+
+            javaImage = ensureImageAvailable(javaImage, logConsumer);
 
             List<String> command = new ArrayList<>(List.of("docker", "run", "--rm"));
 
@@ -102,12 +152,17 @@ public class SandboxManager {
 
             command.addAll(List.of("-v", instanceDir + ":/app", javaImage, "java"));
 
-            if (!javaImage.equals("sandbox-java8")) {
+            if (!javaImage.contains("sandbox-java8")) {
                 command.add("--enable-native-access=ALL-UNNAMED");
             }
 
-            // Common JVM arguments
             command.add("-Djava.library.path=/app/versions/" + mcVersion + "/natives");
+
+            if (modded != null
+                    && (modded.loader().equals("forge") || modded.loader().equals("neoforge"))) {
+                command.add("-DlibraryDirectory=/app/libraries");
+            }
+
             command.add("-cp");
             command.add(classpath);
 
@@ -121,8 +176,13 @@ public class SandboxManager {
                         "-token",
                         "0"));
             } else {
+                command.add(mainClass);
+
+                if (!extraArgs.isEmpty()) {
+                    command.addAll(extraArgs);
+                }
+
                 command.addAll(List.of(
-                        mainClass,
                         "--version",
                         mcVersion,
                         "--accessToken",
@@ -167,6 +227,7 @@ public class SandboxManager {
 
     /** Determine Java version for Minecraft version **/
     private static String getJavaImageForVersion(String mcVersion) {
+        String image;
         try {
             String[] parts = mcVersion.split("\\.");
             if (parts.length >= 2) {
@@ -176,45 +237,51 @@ public class SandboxManager {
 
                 if (major >= 26) {
                     System.out.println("[DOCKER] Using Java 25");
-                    return "sandbox-java25";
-                }
-
-                if (major == 1) {
+                    image = "sandbox-java25";
+                } else if (major == 1) {
                     if (minor <= 16) {
                         System.out.println("[DOCKER] Using Java 8.");
-                        return "sandbox-java8";
+                        image = "sandbox-java8";
                     } else if (minor == 17) {
                         System.out.println("[DOCKER] Using Java 16.");
-                        return "sandbox-java16";
+                        image = "sandbox-java16";
                     } else if (minor >= 18 && minor <= 21) {
                         if ((minor == 20 && patch >= 5) || minor == 21) {
                             System.out.println("[DOCKER] Using Java 21.");
-                            return "sandbox-java21";
+                            image = "sandbox-java21";
+                        } else {
+                            System.out.println("[DOCKER] Using Java 17.");
+                            image = "sandbox-java17";
                         }
-                        System.out.println("[DOCKER] Using Java 17.");
-                        return "sandbox-java17";
+                    } else {
+                        image = "sandbox-java25";
                     }
+                } else {
+                    image = "sandbox-java25";
                 }
+            } else {
+                image = "sandbox-java25";
             }
         } catch (Exception e) {
             System.err.println("Could not parse version " + mcVersion + " defaulting to Java 25.");
+            image = "sandbox-java25";
         }
-        System.out.println("[DOCKER] Using Java 25.");
-        return "sandbox-java25";
+        return GHCR_PREFIX + image;
     }
 
-    private static ModdedProfile loadModdedProfile(String mcVersion) {
+    private static ModdedProfile loadModdedProfile(Instance instance) {
+        if (instance.modLoader() == null || instance.modLoader().equalsIgnoreCase("vanilla")) {
+            return null;
+        }
         try {
-            for (String loader : new String[] {"fabric", "forge", "neoforge"}) {
-                Path cand = Path.of(
-                        System.getProperty("user.home"),
-                        ".sandbox-launcher",
-                        "versions",
-                        mcVersion,
-                        mcVersion + "-" + loader + ".json");
-                if (Files.exists(cand)) {
-                    return DownloadManager.MAPPER.readValue(cand.toFile(), ModdedProfile.class);
-                }
+            Path cand = Path.of(
+                    System.getProperty("user.home"),
+                    ".sandbox-launcher",
+                    "versions",
+                    instance.mcVersion(),
+                    instance.mcVersion() + "-" + instance.modLoader().toLowerCase() + ".json");
+            if (Files.exists(cand)) {
+                return DownloadManager.MAPPER.readValue(cand.toFile(), ModdedProfile.class);
             }
         } catch (Exception ignored) {
         }

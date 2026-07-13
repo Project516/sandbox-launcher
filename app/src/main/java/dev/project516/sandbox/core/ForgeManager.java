@@ -73,27 +73,67 @@ public class ForgeManager {
             String line;
             while ((line = r.readLine()) != null) System.out.println("[FORGE]" + line);
         }
+
         int code = proc.waitFor();
         if (code != 0) throw new RuntimeException("Forge installer exited with " + code);
 
-        String versionId = mc + "-forge";
-        Path versionDir = mcRoot.resolve("versions").resolve(versionId);
-        Path versionJson = versionDir.resolve(versionId + ".json");
-        if (!Files.exists(versionJson)) {
-            throw new RuntimeException("Forge installer did not produce " + versionJson);
+        Path versionsDir = mcRoot.resolve("versions");
+        Path foundVersionJson = null;
+        if (Files.exists(versionsDir)) {
+            try (var stream = Files.walk(versionsDir)) {
+                foundVersionJson = stream.filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".json"))
+                        .filter(path -> path.getFileName().toString().contains(forgeVer))
+                        .findFirst()
+                        .orElse(null);
+            }
+        }
+        if (foundVersionJson == null) {
+            throw new RuntimeException("Forge installer did not produce a version JSON for " + forgeVer);
         }
 
-        JsonNode vj = MAPPER.readTree(Files.readString(versionJson));
+        JsonNode vj = MAPPER.readTree(Files.readString(foundVersionJson));
         String mainClass = vj.path("mainClass").asText("cpw.mods.modlauncher.Launcher");
         List<String> cp = new ArrayList<>();
         for (JsonNode lib : vj.path("libraries")) {
             JsonNode art = lib.path("downloads").path("artifact").path("path");
-            if (art.isMissingNode()) cp.add("libraries/" + art.asText());
+            if (!art.isMissingNode()) {
+                cp.add("libraries/" + art.asText());
+            } else {
+                String name = lib.path("name").asText("");
+                if (!name.isEmpty()) {
+                    String[] parts = name.split(":");
+                    if (parts.length >= 3) {
+                        String groupPath = parts[0].replace('.', '/');
+                        String artifact = parts[1];
+                        String version = parts[2];
+                        String path = groupPath + "/" + artifact + "/" + version + "/" + artifact + "-" + version;
+                        if (parts.length == 4) {
+                            path += "-" + parts[3];
+                        }
+                        path += ".jar";
+                        cp.add("libraries/" + path);
+                    }
+                }
+            }
+        }
+
+        List<String> extraArgs = new ArrayList<>();
+        JsonNode args = vj.path("arguments").path("game");
+        if (args.isArray()) {
+            for (JsonNode arg : args) {
+                if (arg.isTextual()) {
+                    String argStr = arg.asText();
+                    if (argStr.startsWith("--launchTarget") || argStr.startsWith("--fml.")) {
+                        extraArgs.add(argStr);
+                    }
+                }
+            }
         }
 
         Path profilePath = mcRoot.resolve("versions").resolve(mc).resolve(mc + "-forge.json");
         Files.createDirectories(profilePath.getParent());
-        ModdedProfile profile = new ModdedProfile("forge", mc, mainClass, cp);
+        ModdedProfile profile = new ModdedProfile("forge", mc, mainClass, cp, extraArgs);
         Files.writeString(profilePath, MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
 
         if (progress != null) progress.accept(1.0);

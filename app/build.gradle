@@ -41,6 +41,8 @@ application {
     mainClass = 'dev.project516.sandbox.Main'
 }
 
+version = '1.0.0'
+
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
@@ -82,13 +84,3 @@ spotless {
         endWithNewline()
     }
 }
-
-/*
-tasks.register('build docker', Exec) {
-    description = 'Builds local docker containers'
-    group = 'Docker'
-
-    workingDir rootProject.projectDir
-    commandLine 'sh', "${rootProject.projectDir}/docker/build-docker.sh"
-}
-*/

@@ -136,12 +136,43 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
         List<String> cp = new ArrayList<>();
         for (JsonNode lib : vj.path("libraries")) {
             JsonNode art = lib.path("downloads").path("artifact").path("path");
-            if (!art.isMissingNode()) cp.add("libraries/" + art.asText());
+            if (!art.isMissingNode()) {
+                cp.add("libraries/" + art.asText());
+            } else {
+                String name = lib.path("name").asText("");
+                if (!name.isEmpty()) {
+                    String[] parts = name.split(":");
+                    if (parts.length >= 3) {
+                        String groupPath = parts[0].replace('.', '/');
+                        String artifact = parts[1];
+                        String version = parts[2];
+                        String path = groupPath + "/" + artifact + "/" + version + "/" + artifact + "-" + version;
+                        if (parts.length == 4) {
+                            path += "-" + parts[3];
+                        }
+                        path += ".jar";
+                        cp.add("libraries/" + path);
+                    }
+                }
+            }
+        }
+
+        List<String> extraArgs = new ArrayList<>();
+        JsonNode args = vj.path("arguments").path("game");
+        if (args.isArray()) {
+            for (JsonNode arg : args) {
+                if (arg.isTextual()) {
+                    String argStr = arg.asText();
+                    if (argStr.startsWith("--launchTarget") || argStr.startsWith("--fml.")) {
+                        extraArgs.add(argStr);
+                    }
+                }
+            }
         }
 
         Path profilePath = mcRoot.resolve("versions").resolve(mc).resolve(mc + "-neoforge.json");
         Files.createDirectories(profilePath.getParent());
-        ModdedProfile profile = new ModdedProfile("neoforge", mc, mainClass, cp);
+        ModdedProfile profile = new ModdedProfile("neoforge", mc, mainClass, cp, extraArgs);
         Files.writeString(profilePath, MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(profile));
 
         if (progress != null) progress.accept(1.0);

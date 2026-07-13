@@ -4,30 +4,53 @@ A JavaFX Minecraft launcher that launches Minecraft in a sandbox environment.
 
 ![screenshot](assets/screenshot.png)
 
-This uses docker for isolated environments.
+Each Minecraft instance runs inside an isolated Docker container with the correct Java version for that Minecraft release. No mod loaders or game files leak between instances.
 
-Currently the features are:
-* Install multiple isolated instances
-* Launch those instances in a Docker container 
-* Change instance name and icon
-* Change your player username
+## Features
 
-More features will be added in the future.
+- Install multiple isolated Minecraft instances
+- Launch instances inside Docker containers with automatic Java version selection
+- Change instance name and icon
+- Change your player username
+- Support for Fabric, Forge, and NeoForge mod loaders
+- Support for old Minecraft versions (1.5 and below via Betacraft proxy)
+- Progress bars for downloads
+- Console output viewer for running instances
+- Kill button for running instances
 
-There may be bugs!
+## Requirements
 
-## Setup
+- **Linux** (X11 display server required)
+- **Java 25** - [Eclipse Temurin](https://adoptium.net/temurin/releases?version=25&os=any&arch=any) recommended
+- **Docker Engine** - [Docker Engine](https://docs.docker.com/engine/) is sufficient, Docker Desktop is not required
 
-**Make sure you have Java 25 and [Docker](https://www.docker.com/) installed!**
+> Windows and Mac are not supported. It may be possible to use an X server (VcXsrv, XQuartz) but this has not been tested.
 
-Also Linux is the only supported OS for now. Windows and Mac support may be added, and it may be possible to use a xserver alternative to get this to work now, but it has not been tested.
+## Installation
 
-I recommend using [Eclipse Temurin](https://adoptium.net/temurin/releases?version=25&os=any&arch=any). For Docker, you do not need [Docker Desktop](https://docs.docker.com/desktop/). [Docker Engine](https://docs.docker.com/engine/) is all that is needed.
+1. Download the latest `sandbox-launcher.zip` from [Releases](https://github.com/Project516/sandbox-launcher/releases)
+2. Extract the zip
+3. Run the launcher binary inside the extracted directory
 
-Currently the way to setup and use this is to:
+Docker images for each Java version are pulled automatically from GHCR on first launch. No manual setup of Docker images is needed.
 
-1. Clone the repository.
-2. Run `/docker/build-docker.sh` to build the docker containers
-3. Run `./gradlew run` to launch the project
+## Setup for Development
 
-From here, you can select an instance to install and run it.
+1. Clone the repository
+2. Run `./gradlew run` to launch the project
+
+Docker images are pulled automatically at runtime. If you want to build them locally instead:
+
+```sh
+docker/build-docker.sh
+```
+
+## X11 / Audio Setup
+
+If you are running inside Docker or having display/audio issues, run the fix script:
+
+```sh
+bash fix-docker.sh
+```
+
+This enables X11 access for Docker containers and sets up PulseAudio forwarding.
