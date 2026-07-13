@@ -26,6 +26,7 @@ public class PlayerManager {
         }
     }
 
+    /** save settings **/
     public static void saveSettings(String username) {
         settings = new Settings(username);
         try {
@@ -39,6 +40,7 @@ public class PlayerManager {
         }
     }
 
+    /** get player username **/
     public static String getUsername() {
         return settings.username();
     }

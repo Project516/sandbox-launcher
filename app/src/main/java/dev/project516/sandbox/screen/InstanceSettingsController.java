@@ -1,6 +1,5 @@
 package dev.project516.sandbox.screen;
 
-// import dev.project516.sandbox.core.FabricManager;
 import dev.project516.sandbox.model.Instance;
 import java.util.function.Consumer;
 import javafx.fxml.FXML;

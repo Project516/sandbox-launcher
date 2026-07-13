@@ -44,6 +44,7 @@ public class InstanceManager {
         }
     }
 
+    /** delete instance **/
     public static void deleteVersionFiles(String mcVersion) {
         Path versionPath = CONFIG_DIR.resolve("versions").resolve(mcVersion);
         System.out.println("[INSTANCE] Attempting to delete: " + versionPath.toAbsolutePath());

@@ -14,12 +14,14 @@ import java.util.Map;
 
 /** Download manager **/
 public class DownloadManager {
+
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static void downloadFile(String fileUrl, Path destination) {
         downloadFile(fileUrl, destination, progress -> {});
     }
+
     /** General Download file method **/
     public static void downloadFile(String fileUrl, Path destination, java.util.function.Consumer<Double> onProgress) {
         try {

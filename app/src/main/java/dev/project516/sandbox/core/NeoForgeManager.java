@@ -16,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** NeoForge modloader manager **/
-public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
+public class NeoForgeManager { // NeoForge is a modern fork of Forge
     private static final String MAVEN_METADATA =
             "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml";
     private static final String MAVEN = "https://maven.neoforged.net/releases/net/neoforged/neoforge/";
@@ -31,7 +31,8 @@ public class NeoForgeManager { // NeoForge is a fork of Forge that's modern
                 try {
                     int minor = Integer.parseInt(mcParts[1]);
                     if (minor < 20) {
-                        throw new RuntimeException("NeoForge does not support MC " + mcVersion);
+                        throw new RuntimeException(
+                                "NeoForge does not support MC " + mcVersion); // supports 1.20 and above
                     }
                 } catch (NumberFormatException ignored) {
                 }

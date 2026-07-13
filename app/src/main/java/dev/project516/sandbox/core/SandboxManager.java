@@ -14,8 +14,10 @@ import java.util.function.Consumer;
 /** Manages launching Minecraft in a sandbox **/
 public class SandboxManager {
 
-    private static final String GHCR_PREFIX = "ghcr.io/project516/";
+    private static final String GHCR_PREFIX =
+            "ghcr.io/project516/"; // my github username for location of remote docker containers
 
+    /** if docker images are already downloaded locally, use those **/
     private static String ensureImageAvailable(String image, Consumer<String> logConsumer) throws Exception {
         String localName = image.startsWith(GHCR_PREFIX) ? image.substring(GHCR_PREFIX.length()) : image;
 
@@ -52,7 +54,9 @@ public class SandboxManager {
         return image;
     }
 
-    public static Process linuxLaunchInstanceInDocker(Instance instance, Consumer<String> logConsumer) {
+    /** launch docker container with Minecraft instance on Linux **/
+    public static Process linuxLaunchInstanceInDocker(
+            Instance instance, Consumer<String> logConsumer) { // yeah linux btw
         String osName = System.getProperty("os.name").toLowerCase();
         String mcVersion = instance.mcVersion();
         String assetIndexId = mcVersion;

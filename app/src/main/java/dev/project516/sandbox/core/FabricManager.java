@@ -12,16 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Managing Fabric modloader **/
+/** Managing the Fabric modloader **/
 public class FabricManager {
     private static final String FABRIC_META = "https://meta.fabricmc.net/v2/versions/loader/";
     private static final String MAVEN_BASE = "https://maven.fabricmc.net/";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /** fetch latest fabric version for Minecraft version **/
     public static FabricVersionInfo fetchLatestLoader(String mcVersion) {
         Path cacheFile = Path.of(
                 System.getProperty("user.home"), ".sandbox-launcher", "cache", "fabric_loader_" + mcVersion + ".json");
-        String body = DownloadManager.fetchTextWithCache(FABRIC_META + mcVersion, cacheFile, true);
+        String body = DownloadManager.fetchTextWithCache(
+                FABRIC_META + mcVersion, cacheFile, true); // background refresh is part of local cache
 
         if (body == null) {
             System.err.println("[FABRIC] Failed to fetch loader metadata for " + mcVersion);
@@ -104,6 +106,7 @@ public class FabricManager {
         System.out.println("[FABRIC] Installed loader " + info.loader().version() + " for " + mc);
     }
 
+    /** navigating fabric maven **/
     static String mavenPathOf(String coords) {
         String[] parts = coords.split(":");
         String group = parts[0].replace('.', '/');
