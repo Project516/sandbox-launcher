@@ -66,7 +66,15 @@ run {
 }
 
 // spotless config
-compileJava.dependsOn spotlessApply
+//
+// Spotless wires `spotlessCheck` into the `check` task automatically, so
+// `./gradlew check` (and `build`, which depends on `check`) will FAIL on
+// formatting violations. CI relies on this to gate unformatted code.
+//
+// Run `./gradlew spotlessApply` to auto-format before committing. We do NOT
+// wire `spotlessApply` into `compileJava` on purpose: doing so would silently
+// rewrite files on every compile, both masking formatting problems and
+// leaving unexpected working-tree changes behind.
 spotless {
     java {
         importOrder()

@@ -39,6 +39,10 @@ Docker images for each Java version are pulled automatically from GHCR on first 
 1. Clone the repository
 2. Run `./gradlew run` to launch the project
 
+Code formatting is enforced by Spotless via the `com.diffplug.spotless` Gradle
+plugin. CI runs `./gradlew spotlessCheck` and fails on violations, so run
+`./gradlew spotlessApply` before committing to auto-format Java and Gradle files.
+
 Docker images are pulled automatically at runtime. If you want to build them locally instead:
 
 ```sh
