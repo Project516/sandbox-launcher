@@ -1,6 +1,6 @@
 [versions]
 junit-jupiter = "6.1.2"
-guava = "33.6.0-jre"
+guava = "33.7.1-jre"
 jackson = '2.22.1'
 
 [libraries]
