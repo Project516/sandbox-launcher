@@ -4,13 +4,44 @@ on:
   push:
     branches: ["master"]
     tags: ["v*"]
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "docker/**"
+      - ".github/workflows/docker-publish.yml"
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
 
 jobs:
+  build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      matrix:
+        dockerfile:
+          - docker/java8.Dockerfile
+          - docker/java16.Dockerfile
+          - docker/java17.Dockerfile
+          - docker/java21.Dockerfile
+          - docker/java25.Dockerfile
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+
   build-and-push:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
