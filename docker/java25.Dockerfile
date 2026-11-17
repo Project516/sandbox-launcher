@@ -1,4 +1,5 @@
 FROM eclipse-temurin:25.0.5_8-jdk
+ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libegl1 libglfw3 libgl1-mesa-dri \
     libxtst6 libxxf86vm1 libopenal1 alsa-utils libasound2-plugins libpulse0 libflite1 \

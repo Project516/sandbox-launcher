@@ -6,6 +6,7 @@ jpackage --input app/build/libs/ \
   --name sandbox-launcher \
   --main-jar app-all.jar \
   --main-class dev.project516.sandbox.Main \
+  --java-options "-XX:-UseBASE64Intrinsics" \
   --type app-image \
   --app-version 1.0.0
 

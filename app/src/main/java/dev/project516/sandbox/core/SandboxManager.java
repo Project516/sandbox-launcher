@@ -190,6 +190,11 @@ public class SandboxManager {
                 command.addAll(modded.jvmArgs());
             }
 
+            // Disable the vulnerable Base64 intrinsic even for already cached images.
+            if (!javaImage.contains("sandbox-java8") && !javaImage.contains("sandbox-java16")) {
+                command.add("-XX:-UseBASE64Intrinsics");
+            }
+
             command.add("-cp");
             command.add(classpath);
 

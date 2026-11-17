@@ -39,6 +39,7 @@ javafx {
 application {
     // Define the main class for the application.
     mainClass = 'dev.project516.sandbox.Main'
+    applicationDefaultJvmArgs = ['-XX:-UseBASE64Intrinsics']
 }
 
 version = '1.0.0'
