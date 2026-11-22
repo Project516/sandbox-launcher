@@ -19,6 +19,8 @@ jobs:
         with:
           java-version: "25"
           distribution: "temurin"
+          # jpackage bundles this JDK, so take the newest release, not the runner's cached one
+          check-latest: true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
